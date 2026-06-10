@@ -1,0 +1,20 @@
+{
+  "name": "Ploy Finance - จัดการรายรับรายจ่าย",
+  "short_name": "Ploy Finance",
+  "description": "แอปบันทึกรายรับรายจ่าย ผ่อนบัตรเครดิต และหารค่าใช้จ่าย",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8E7",
+  "theme_color": "#D97706",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

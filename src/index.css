@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  /* Warm amber palette */
+  --color-primary: #D97706;
+  --color-primary-dark: #92400E;
+  --color-primary-light: #FEF3C7;
+  --color-primary-50: #FFFBEB;
+  --color-primary-100: #FEF3C7;
+  --color-primary-200: #FDE68A;
+  --color-primary-300: #FCD34D;
+  --color-primary-400: #FBBF24;
+  --color-primary-500: #F59E0B;
+  --color-primary-600: #D97706;
+  --color-primary-700: #B45309;
+  --color-primary-800: #92400E;
+  --color-primary-900: #78350F;
+
+  --color-income: #059669;
+  --color-income-light: #D1FAE5;
+  --color-expense: #DC2626;
+  --color-expense-light: #FEE2E2;
+  --color-installment: #7C3AED;
+  --color-installment-light: #EDE9FE;
+  --color-split: #EA580C;
+  --color-split-light: #FFEDD5;
+
+  --color-cream: #FFF8E7;
+
+  --font-sans: 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
+  background: #FFF8E7;
+  color: #1F2937;
+  min-height: 100vh;
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Hide scrollbar for filter rows */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
