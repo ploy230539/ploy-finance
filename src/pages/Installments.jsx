@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
+import { useLang } from '../contexts/LanguageContext'
 import { loanTypes, getLoanType } from '../data/categories'
 import Modal from '../components/Modal'
 import { CheckIcon } from '../components/Icons'
@@ -21,6 +22,7 @@ const emptyForm = {
 
 export default function Installments() {
   const { installments, addInstallment, toggleInstallmentPayment, deleteInstallment } = useFinance()
+  const { t, fmtDate } = useLang()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [expandedId, setExpandedId] = useState(null)
@@ -80,12 +82,12 @@ export default function Installments() {
   return (
     <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">หนี้สิน &amp; ผ่อนชำระ</h1>
+        <h1 className="text-xl font-bold text-slate-800">{t('หนี้สิน & ผ่อนชำระ')}</h1>
         <button
           onClick={() => { setForm(emptyForm); setShowModal(true) }}
           className="bg-gradient-to-br from-installment to-violet-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(124,58,237,0.3)] active:translate-y-px transition-transform"
         >
-          + เพิ่มรายการ
+          {t('+ เพิ่มรายการ')}
         </button>
       </div>
 
@@ -93,11 +95,11 @@ export default function Installments() {
       {installments.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-installment-light rounded-2xl p-4 text-center">
-            <div className="text-xs text-slate-500 mb-1">หนี้คงเหลือทั้งหมด</div>
+            <div className="text-xs text-slate-500 mb-1">{t('หนี้คงเหลือทั้งหมด')}</div>
             <div className="text-xl font-bold text-installment">฿{formatMoney(grandRemaining)}</div>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-            <div className="text-xs text-slate-500 mb-1">ต้องผ่อน/เดือน</div>
+            <div className="text-xs text-slate-500 mb-1">{t('ต้องผ่อน/เดือน')}</div>
             <div className="text-xl font-bold text-primary-700">฿{formatMoney(grandMonthly)}</div>
           </div>
         </div>
@@ -107,11 +109,11 @@ export default function Installments() {
       {presentTypes.length > 1 && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
           <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-            ทั้งหมด
+            {t('ทั้งหมด')}
           </FilterChip>
-          {presentTypes.map((t) => (
-            <FilterChip key={t.id} active={filter === t.id} onClick={() => setFilter(t.id)}>
-              {t.icon} {t.name}
+          {presentTypes.map((lt) => (
+            <FilterChip key={lt.id} active={filter === lt.id} onClick={() => setFilter(lt.id)}>
+              {lt.icon} {t(lt.name)}
             </FilterChip>
           ))}
         </div>
@@ -120,7 +122,7 @@ export default function Installments() {
       {installments.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] py-12 text-center">
           <div className="text-5xl mb-3">🏦</div>
-          <p className="text-sm text-slate-400">ยังไม่มีหนี้สิน/รายการผ่อน</p>
+          <p className="text-sm text-slate-400">{t('ยังไม่มีหนี้สิน/รายการผ่อน')}</p>
         </div>
       ) : (
         visible.map((inst) => {
@@ -155,15 +157,15 @@ export default function Installments() {
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                       style={{ backgroundColor: type.color + '1a', color: type.color }}
                     >
-                      {type.name}
+                      {t(type.name)}
                     </span>
                     {allPaid && (
-                      <span className="text-[10px] bg-income-light text-income px-2 py-0.5 rounded-full font-semibold">ปิดหนี้แล้ว ✓</span>
+                      <span className="text-[10px] bg-income-light text-income px-2 py-0.5 rounded-full font-semibold">{t('ปิดหนี้แล้ว')} ✓</span>
                     )}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 truncate">
-                    {inst.cardName && `${inst.cardName} · `}฿{formatMoney(inst.monthlyAmount)}/ด · {paid}/{total} งวด
-                    {inst.interestRate ? ` · ดอกเบี้ย ${inst.interestRate}%` : ''}
+                    {inst.cardName && `${inst.cardName} · `}฿{formatMoney(inst.monthlyAmount)}/ด · {paid}/{total} {t('งวด')}
+                    {inst.interestRate ? ` · ${t('ดอกเบี้ย')} ${inst.interestRate}%` : ''}
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -176,7 +178,7 @@ export default function Installments() {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="text-[10px] text-slate-400">คงเหลือ</div>
+                  <div className="text-[10px] text-slate-400">{t('คงเหลือ')}</div>
                   <div className="text-sm font-bold" style={{ color: type.color }}>฿{formatMoney(remaining)}</div>
                 </div>
                 <span className={`text-slate-300 text-xs transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
@@ -185,9 +187,9 @@ export default function Installments() {
               {isExpanded && (
                 <div className="border-t border-slate-100 p-4 space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>ยอดรวม: ฿{formatMoney(inst.totalAmount)}</span>
+                    <span>{t('ยอดรวม')}: ฿{formatMoney(inst.totalAmount)}</span>
                     <button onClick={() => deleteInstallment(inst.id)} className="text-expense hover:underline">
-                      ลบรายการ
+                      {t('ลบรายการ')}
                     </button>
                   </div>
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -201,9 +203,9 @@ export default function Installments() {
                             : 'bg-white border-slate-200 text-slate-500 hover:border-installment'
                         }`}
                       >
-                        <div className="font-semibold">งวด {payment.month}</div>
+                        <div className="font-semibold">{t('งวด')} {payment.month}</div>
                         <div className="text-[10px] mt-0.5">
-                          {new Date(payment.dueDate).toLocaleDateString('th-TH', { month: 'short', year: '2-digit' })}
+                          {fmtDate(payment.dueDate, { month: 'short', year: '2-digit' })}
                         </div>
                         <div className="mt-1">{payment.paid ? '✅' : '⬜'}</div>
                       </button>
@@ -216,32 +218,32 @@ export default function Installments() {
         })
       )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="เพิ่มหนี้สิน / รายการผ่อน">
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t('เพิ่มหนี้สิน / รายการผ่อน')}>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Loan type selector */}
-          <Field label="ประเภท">
+          <Field label={t('ประเภท')}>
             <div className="grid grid-cols-3 gap-2">
-              {loanTypes.map((t) => {
-                const active = form.loanType === t.id
+              {loanTypes.map((lt) => {
+                const active = form.loanType === lt.id
                 return (
                   <button
-                    key={t.id}
+                    key={lt.id}
                     type="button"
-                    onClick={() => setForm({ ...form, loanType: t.id })}
+                    onClick={() => setForm({ ...form, loanType: lt.id })}
                     className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-[11px] font-medium border-2 transition-all ${
                       active ? 'font-semibold' : 'border-transparent bg-slate-50 text-slate-600'
                     }`}
-                    style={active ? { borderColor: t.color, backgroundColor: t.color + '14', color: t.color } : undefined}
+                    style={active ? { borderColor: lt.color, backgroundColor: lt.color + '14', color: lt.color } : undefined}
                   >
-                    <span className="text-xl">{t.icon}</span>
-                    <span className="text-center leading-tight">{t.name}</span>
+                    <span className="text-xl">{lt.icon}</span>
+                    <span className="text-center leading-tight">{t(lt.name)}</span>
                   </button>
                 )
               })}
             </div>
           </Field>
 
-          <Field label="ชื่อรายการ">
+          <Field label={t('ชื่อรายการ')}>
             <input
               type="text"
               value={form.name}
@@ -252,7 +254,7 @@ export default function Installments() {
             />
           </Field>
 
-          <Field label={form.loanType === 'credit' ? 'ชื่อบัตรเครดิต' : 'ธนาคาร/ผู้ให้สินเชื่อ'}>
+          <Field label={t(form.loanType === 'credit' ? 'ชื่อบัตรเครดิต' : 'ธนาคาร/ผู้ให้สินเชื่อ')}>
             <input
               type="text"
               value={form.cardName}
@@ -263,7 +265,7 @@ export default function Installments() {
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="ยอดรวม (บาท)">
+            <Field label={t('ยอดรวม (บาท)')}>
               <input
                 type="number"
                 step="0.01"
@@ -275,7 +277,7 @@ export default function Installments() {
                 required
               />
             </Field>
-            <Field label="จำนวนงวด">
+            <Field label={t('จำนวนงวด')}>
               <input
                 type="number"
                 min="1"
@@ -289,7 +291,7 @@ export default function Installments() {
             </Field>
           </div>
 
-          <Field label="ดอกเบี้ย % ต่อปี (ไม่บังคับ)">
+          <Field label={t('ดอกเบี้ย % ต่อปี (ไม่บังคับ)')}>
             <input
               type="number"
               step="0.01"
@@ -304,13 +306,13 @@ export default function Installments() {
           {form.monthlyAmount && (
             <div className="bg-installment-light rounded-xl p-4 text-center">
               <div className="text-xs text-slate-500 mb-0.5">
-                ผ่อนเดือนละ {form.totalMonths ? `(${form.totalMonths} งวด ≈ ${(parseInt(form.totalMonths) / 12).toFixed(1)} ปี)` : ''}
+                {t('ผ่อนเดือนละ')} {form.totalMonths ? `(${form.totalMonths} ${t('งวด')} ≈ ${(parseInt(form.totalMonths) / 12).toFixed(1)} ${t('ปี')})` : ''}
               </div>
               <div className="text-xl font-bold text-installment">฿{formatMoney(parseFloat(form.monthlyAmount))}</div>
             </div>
           )}
 
-          <Field label="เริ่มผ่อนวันที่">
+          <Field label={t('เริ่มผ่อนวันที่')}>
             <input
               type="date"
               value={form.startDate}
@@ -325,7 +327,7 @@ export default function Installments() {
             className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-installment to-violet-700 shadow-[0_4px_12px_rgba(124,58,237,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
-            บันทึก
+            {t('บันทึก')}
           </button>
         </form>
       </Modal>

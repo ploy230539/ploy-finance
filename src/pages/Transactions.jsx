@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useFinance } from '../contexts/FinanceContext'
+import { useLang } from '../contexts/LanguageContext'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
 import PhotoCapture from '../components/PhotoCapture'
@@ -21,13 +22,15 @@ const emptyForm = {
   splitWith: [],
   splitNewPerson: '',
   photo: null,
+  walletId: '',
 }
 
 export default function Transactions() {
   const {
     transactions, addTransaction, updateTransaction, deleteTransaction, people, addPerson,
-    expenseCats, incomeCats, getCategory, addCustomCategory, deleteCustomCategory,
+    expenseCats, incomeCats, getCategory, addCustomCategory, deleteCustomCategory, wallets,
   } = useFinance()
+  const { t, fmtDate } = useLang()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
@@ -43,7 +46,7 @@ export default function Transactions() {
 
   function openAdd() {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, walletId: wallets[0]?.id || '' })
     setShowModal(true)
   }
 
@@ -58,6 +61,7 @@ export default function Transactions() {
       splitWith: tx.splitWith || [],
       splitNewPerson: '',
       photo: tx.photo || null,
+      walletId: tx.walletId || wallets[0]?.id || '',
     })
     setShowModal(true)
   }
@@ -97,6 +101,7 @@ export default function Transactions() {
       date: form.date,
       splitWith: form.splitWith,
       photo: form.photo,
+      walletId: form.walletId || wallets[0]?.id,
     }
 
     if (editingId) {
@@ -136,12 +141,12 @@ export default function Transactions() {
   return (
     <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">รายการทั้งหมด</h1>
+        <h1 className="text-xl font-bold text-slate-800">{t('รายการทั้งหมด')}</h1>
         <button
           onClick={() => setShowRecurring(true)}
           className="text-sm font-medium text-primary-700 bg-primary-50 px-3 py-2 rounded-xl"
         >
-          🔁 ประจำ
+          {t('🔁 ประจำ')}
         </button>
       </div>
 
@@ -161,7 +166,7 @@ export default function Transactions() {
                 : 'border-slate-200 bg-white text-slate-500'
             }`}
           >
-            {f.label}
+            {t(f.label)}
           </button>
         ))}
       </div>
@@ -170,16 +175,38 @@ export default function Transactions() {
       {grouped.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] py-12 text-center">
           <div className="text-5xl mb-3">🪙</div>
-          <p className="text-sm text-slate-400">ยังไม่มีรายการ</p>
+          <p className="text-sm text-slate-400">{t('ยังไม่มีรายการ')}</p>
         </div>
       ) : (
         grouped.map(([date, txs]) => (
           <div key={date} className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden">
             <div className="px-5 py-2.5 bg-primary-50 text-xs font-medium text-primary-800">
-              {new Date(date).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              {fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
             <div className="px-5">
               {txs.map((tx) => {
+                if (tx.type === 'transfer') {
+                  const from = wallets.find((w) => w.id === tx.fromWalletId)
+                  const to = wallets.find((w) => w.id === tx.toWalletId)
+                  return (
+                    <div key={tx.id} className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 group">
+                      <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 bg-slate-100">🔄</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{tx.note || t('โอนเงิน')}</div>
+                        <div className="text-xs text-slate-400 truncate">
+                          {from?.icon} {from ? t(from.name) : '—'} → {to?.icon} {to ? t(to.name) : '—'}
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-slate-500">฿{formatMoney(tx.amount)}</span>
+                      <button
+                        onClick={() => deleteTransaction(tx.id)}
+                        className="text-slate-300 hover:text-expense transition-colors text-lg sm:opacity-0 sm:group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                }
                 const cat = getCategory(tx.category)
                 const isIncome = tx.type === 'income'
                 return (
@@ -196,12 +223,12 @@ export default function Transactions() {
                         {cat?.icon || '📝'}
                       </span>
                       <span className="flex-1 min-w-0">
-                        <span className="block text-sm font-medium truncate">{tx.note || cat?.name}</span>
+                        <span className="block text-sm font-medium truncate">{tx.note || (cat ? t(cat.name) : '')}</span>
                         <span className="block text-xs text-slate-400 truncate">
-                          {cat?.name}
+                          {cat ? t(cat.name) : ''}
                           {tx.splitWith?.length > 0 && (
                             <span className="text-split">
-                              {' · '}หาร {tx.splitWith.length + 1} คน · คนละ ฿{formatMoney(tx.amount / (tx.splitWith.length + 1))}
+                              {' · '}{t('หาร')} {tx.splitWith.length + 1} {t('คน')} · {t('คนละ')} ฿{formatMoney(tx.amount / (tx.splitWith.length + 1))}
                             </span>
                           )}
                         </span>
@@ -234,7 +261,7 @@ export default function Transactions() {
       )}
 
       {/* Add / Edit Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'แก้ไขรายการ' : 'เพิ่มรายการ'}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? t('แก้ไขรายการ') : t('เพิ่มรายการ')}>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Type toggle */}
           <div className="flex rounded-xl overflow-hidden border-2 border-slate-200">
@@ -245,7 +272,7 @@ export default function Transactions() {
                 form.type === 'expense' ? 'bg-expense text-white' : 'bg-white text-slate-500'
               }`}
             >
-              รายจ่าย
+              {t('รายจ่าย')}
             </button>
             <button
               type="button"
@@ -254,7 +281,7 @@ export default function Transactions() {
                 form.type === 'income' ? 'bg-income text-white' : 'bg-white text-slate-500'
               }`}
             >
-              รายรับ
+              {t('รายรับ')}
             </button>
           </div>
 
@@ -274,7 +301,7 @@ export default function Transactions() {
           </div>
 
           {/* Category */}
-          <Field label="หมวดหมู่">
+          <Field label={t('หมวดหมู่')}>
             <CategoryPicker
               categories={form.type === 'expense' ? expenseCats : incomeCats}
               selected={form.category}
@@ -285,18 +312,18 @@ export default function Transactions() {
           </Field>
 
           {/* Note */}
-          <Field label="หมายเหตุ">
+          <Field label={t('หมายเหตุ')}>
             <input
               type="text"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
-              placeholder="รายละเอียดเพิ่มเติม..."
+              placeholder={t('รายละเอียดเพิ่มเติม...')}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary-600 transition-colors"
             />
           </Field>
 
           {/* Date */}
-          <Field label="วันที่">
+          <Field label={t('วันที่')}>
             <input
               type="date"
               value={form.date}
@@ -305,25 +332,45 @@ export default function Transactions() {
             />
           </Field>
 
+          {/* Wallet */}
+          {wallets.length > 1 && (
+            <Field label={form.type === 'income' ? t('💰 เข้ากระเป๋า') : t('💰 จากกระเป๋า')}>
+              <div className="flex flex-wrap gap-2">
+                {wallets.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => setForm({ ...form, walletId: w.id })}
+                    className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5 ${
+                      (form.walletId || wallets[0]?.id) === w.id ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    <span>{w.icon}</span>{t(w.name)}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+
           {/* Receipt photo */}
-          <Field label="🧾 สลิป/ใบเสร็จ (ไม่บังคับ)">
+          <Field label={t('🧾 สลิป/ใบเสร็จ (ไม่บังคับ)')}>
             <PhotoCapture value={form.photo} onChange={(photo) => setForm({ ...form, photo })} />
           </Field>
 
           {/* Split (hidden while editing to keep settlement data intact) */}
           {form.type === 'expense' && !editingId && (
-            <Field label="👥 หารค่าใช้จ่าย">
+            <Field label={t('👥 หารค่าใช้จ่าย')}>
               <div className="flex gap-2 mb-2">
                 <input
                   type="text"
                   value={form.splitNewPerson}
                   onChange={(e) => setForm({ ...form, splitNewPerson: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSplitPerson())}
-                  placeholder="พิมพ์ชื่อคนที่จะหาร..."
+                  placeholder={t('พิมพ์ชื่อคนที่จะหาร...')}
                   className="flex-1 px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-split transition-colors"
                 />
                 <button type="button" onClick={addSplitPerson} className="px-4 py-2.5 bg-split text-white rounded-xl text-sm font-semibold">
-                  เพิ่ม
+                  {t('เพิ่ม')}
                 </button>
               </div>
 
@@ -346,7 +393,7 @@ export default function Transactions() {
 
               {splitAmount && (
                 <div className="bg-split-light rounded-xl p-3 text-sm text-split font-medium">
-                  หาร {splitCount} คน → คนละ <span className="font-bold">฿{formatMoney(splitAmount)}</span>
+                  {t('หาร')} {splitCount} {t('คน')} → {t('คนละ')} <span className="font-bold">฿{formatMoney(splitAmount)}</span>
                 </div>
               )}
             </Field>
@@ -358,7 +405,7 @@ export default function Transactions() {
             className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-primary-600 to-primary-700 shadow-[0_4px_12px_rgba(217,119,6,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
-            {editingId ? 'บันทึกการแก้ไข' : 'บันทึกรายการ'}
+            {editingId ? t('บันทึกการแก้ไข') : t('บันทึกรายการ')}
           </button>
         </form>
       </Modal>

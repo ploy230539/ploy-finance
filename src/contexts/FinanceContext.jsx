@@ -10,6 +10,8 @@ function ymNow() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+const DEFAULT_WALLET = { id: 'w_cash', name: 'เงินสด', type: 'cash', icon: '💵', color: '#059669', initialBalance: 0 }
+
 function makeRecurringTx(rule, ym) {
   return {
     id: uuidv4(),
@@ -62,6 +64,10 @@ export function FinanceProvider({ children }) {
   )
   const [budgets, setBudgets] = useState(() => loadFromStorage('ploy_budgets', {}))
   const [recurring, setRecurring] = useState(() => loadFromStorage('ploy_recurring', []))
+  const [wallets, setWallets] = useState(() => {
+    const w = loadFromStorage('ploy_wallets', null)
+    return w && w.length ? w : [DEFAULT_WALLET]
+  })
 
   useEffect(() => saveToStorage('ploy_transactions', transactions), [transactions])
   useEffect(() => saveToStorage('ploy_installments', installments), [installments])
@@ -69,6 +75,7 @@ export function FinanceProvider({ children }) {
   useEffect(() => saveToStorage('ploy_custom_categories', customCategories), [customCategories])
   useEffect(() => saveToStorage('ploy_budgets', budgets), [budgets])
   useEffect(() => saveToStorage('ploy_recurring', recurring), [recurring])
+  useEffect(() => saveToStorage('ploy_wallets', wallets), [wallets])
 
   // --- Firebase cloud sync (only when logged in) ---
   const { user } = useAuth()
@@ -76,8 +83,8 @@ export function FinanceProvider({ children }) {
   const saveTimer = useRef(null)
 
   const snapshotData = useCallback(
-    () => ({ transactions, installments, people, customCategories, budgets, recurring }),
-    [transactions, installments, people, customCategories, budgets, recurring]
+    () => ({ transactions, installments, people, customCategories, budgets, recurring, wallets }),
+    [transactions, installments, people, customCategories, budgets, recurring, wallets]
   )
 
   // Load the user's cloud data on login (migrate local → cloud on first login)
@@ -101,9 +108,10 @@ export function FinanceProvider({ children }) {
           setCustomCategories(d.customCategories || [])
           setBudgets(d.budgets || {})
           setRecurring(d.recurring || [])
+          setWallets(d.wallets?.length ? d.wallets : [DEFAULT_WALLET])
         } else {
           // first login on this account → seed cloud with whatever is local
-          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring })
+          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring, wallets })
         }
         if (!cancelled) setCloudReady(true)
       } catch (e) {
@@ -165,6 +173,40 @@ export function FinanceProvider({ children }) {
 
   const updateTransaction = useCallback((id, patch) => {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+  }, [])
+
+  // --- Wallets ---
+  const addWallet = useCallback((w) => {
+    const newWallet = { id: 'w_' + uuidv4().slice(0, 8), initialBalance: 0, ...w }
+    setWallets((prev) => [...prev, newWallet])
+    return newWallet
+  }, [])
+
+  const updateWallet = useCallback((id, patch) => {
+    setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
+  }, [])
+
+  const deleteWallet = useCallback((id) => {
+    // keep at least one wallet; transactions of a deleted wallet fall back to the default
+    setWallets((prev) => (prev.length <= 1 ? prev : prev.filter((w) => w.id !== id)))
+  }, [])
+
+  // Transfer money between two wallets (not counted as income/expense)
+  const addTransfer = useCallback(({ fromWalletId, toWalletId, amount, date, note }) => {
+    setTransactions((prev) => [
+      {
+        id: uuidv4(),
+        type: 'transfer',
+        fromWalletId,
+        toWalletId,
+        amount,
+        date,
+        note: note || '',
+        splitWith: [],
+        createdAt: new Date().toISOString(),
+      },
+      ...prev,
+    ])
   }, [])
 
   // Toggle "received money back" for one person on a split bill.
@@ -313,8 +355,9 @@ export function FinanceProvider({ children }) {
       customCategories,
       budgets,
       recurring,
+      wallets,
     }),
-    [transactions, installments, people, customCategories, budgets, recurring]
+    [transactions, installments, people, customCategories, budgets, recurring, wallets]
   )
 
   const importData = useCallback((data) => {
@@ -327,7 +370,30 @@ export function FinanceProvider({ children }) {
     setCustomCategories(data.customCategories || [])
     setBudgets(data.budgets || {})
     setRecurring(data.recurring || [])
+    setWallets(data.wallets?.length ? data.wallets : [DEFAULT_WALLET])
   }, [])
+
+  // Per-wallet balance: initialBalance + income − expense ± transfers.
+  // Transactions without a walletId fall back to the first (default) wallet.
+  const walletBalances = useMemo(() => {
+    const defId = wallets[0]?.id
+    const bal = {}
+    wallets.forEach((w) => {
+      bal[w.id] = Number(w.initialBalance) || 0
+    })
+    transactions.forEach((t) => {
+      if (t.type === 'transfer') {
+        if (t.fromWalletId != null) bal[t.fromWalletId] = (bal[t.fromWalletId] || 0) - t.amount
+        if (t.toWalletId != null) bal[t.toWalletId] = (bal[t.toWalletId] || 0) + t.amount
+        return
+      }
+      const wid = t.walletId || defId
+      if (wid == null) return
+      if (t.type === 'income') bal[wid] = (bal[wid] || 0) + t.amount
+      else if (t.type === 'expense') bal[wid] = (bal[wid] || 0) - t.amount
+    })
+    return bal
+  }, [wallets, transactions])
 
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
@@ -368,6 +434,12 @@ export function FinanceProvider({ children }) {
         addRecurring,
         toggleRecurring,
         deleteRecurring,
+        wallets,
+        addWallet,
+        updateWallet,
+        deleteWallet,
+        addTransfer,
+        walletBalances,
         expenseCats,
         incomeCats,
         getCategory,

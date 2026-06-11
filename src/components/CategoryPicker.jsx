@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLang } from '../contexts/LanguageContext'
 
 // Curated emoji set + free typing lets users "make their own" icon
 const EMOJI_CHOICES = [
@@ -13,6 +14,7 @@ const COLOR_CHOICES = [
 ]
 
 export default function CategoryPicker({ categories, selected, onSelect, onAddCategory, onDeleteCategory }) {
+  const { t } = useLang()
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [draft, setDraft] = useState({ name: '', icon: '🍜', color: '#D97706' })
@@ -33,7 +35,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
     return (
       <div className="border-2 border-primary-200 bg-primary-50 rounded-2xl p-3.5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-primary-800">สร้างหมวดหมู่ใหม่</span>
+          <span className="text-sm font-semibold text-primary-800">{t('สร้างหมวดหมู่ใหม่')}</span>
           <button type="button" onClick={() => setCreating(false)} className="text-slate-400 text-xl leading-none">×</button>
         </div>
 
@@ -49,7 +51,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
             type="text"
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            placeholder="ชื่อหมวดหมู่ เช่น ค่าเลี้ยงลูก"
+            placeholder={t('ชื่อหมวดหมู่ เช่น ค่าเลี้ยงลูก')}
             className="flex-1 px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary-600 bg-white"
             autoFocus
           />
@@ -58,7 +60,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
         {/* Icon: type any emoji + quick choices */}
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <label className="text-xs text-slate-500">ไอคอน (พิมพ์ emoji เองได้)</label>
+            <label className="text-xs text-slate-500">{t('ไอคอน (พิมพ์ emoji เองได้)')}</label>
             <input
               type="text"
               value={draft.icon}
@@ -84,7 +86,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
 
         {/* Color */}
         <div>
-          <label className="text-xs text-slate-500 block mb-1.5">สี</label>
+          <label className="text-xs text-slate-500 block mb-1.5">{t('สี')}</label>
           <div className="flex flex-wrap gap-2">
             {COLOR_CHOICES.map((c) => (
               <button
@@ -104,7 +106,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
           disabled={!draft.name.trim() || !draft.icon.trim()}
           className="w-full py-2.5 rounded-xl text-white text-sm font-semibold bg-gradient-to-br from-primary-600 to-primary-700 disabled:opacity-40"
         >
-          เพิ่มหมวดหมู่
+          {t('เพิ่มหมวดหมู่')}
         </button>
       </div>
     )
@@ -114,7 +116,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
     <div>
       <input
         type="text"
-        placeholder="ค้นหาหมวดหมู่..."
+        placeholder={t('ค้นหาหมวดหมู่...')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm mb-3 focus:outline-none focus:border-primary-600 transition-colors"
@@ -146,7 +148,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
               >
                 {cat.icon}
               </span>
-              <span className="truncate w-full text-center leading-tight text-[11px]">{cat.name}</span>
+              <span className="truncate w-full text-center leading-tight text-[11px]">{t(cat.name)}</span>
             </button>
           )
         })}
@@ -159,7 +161,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
             className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl text-xs border-2 border-dashed border-primary-300 text-primary-700 hover:bg-primary-50 transition-colors"
           >
             <span className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl bg-primary-50">＋</span>
-            <span className="text-[11px]">เพิ่มเอง</span>
+            <span className="text-[11px]">{t('เพิ่มเอง')}</span>
           </button>
         )}
       </div>

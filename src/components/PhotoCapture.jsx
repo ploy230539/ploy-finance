@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import { compressImage } from '../utils/image'
+import { useLang } from '../contexts/LanguageContext'
 
 // Capture or pick a receipt/slip photo, compress it, return a data URL via onChange.
 export default function PhotoCapture({ value, onChange, accent = '#D97706' }) {
+  const { t } = useLang()
   const inputRef = useRef(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,7 +48,7 @@ export default function PhotoCapture({ value, onChange, accent = '#D97706' }) {
             onClick={() => inputRef.current?.click()}
             className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full"
           >
-            เปลี่ยนรูป
+            {t('เปลี่ยนรูป')}
           </button>
         </div>
       ) : (
@@ -58,11 +60,11 @@ export default function PhotoCapture({ value, onChange, accent = '#D97706' }) {
           style={{ borderColor: loading ? accent : undefined }}
         >
           {loading ? (
-            <span className="text-sm" style={{ color: accent }}>⏳ กำลังบีบอัดรูป...</span>
+            <span className="text-sm" style={{ color: accent }}>{t('⏳ กำลังบีบอัดรูป...')}</span>
           ) : (
             <span className="flex flex-col items-center gap-1">
               <span className="text-3xl">📷</span>
-              <span className="text-sm">แตะเพื่อถ่าย / เลือกรูปสลิป</span>
+              <span className="text-sm">{t('แตะเพื่อถ่าย / เลือกรูปสลิป')}</span>
             </span>
           )}
         </button>

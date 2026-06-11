@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { HomeIcon, ListIcon, CardIcon, SplitIcon } from './Icons'
 import SettingsModal from './SettingsModal'
+import { useLang } from '../contexts/LanguageContext'
 
 const navItems = [
   { to: '/', label: 'หน้าหลัก', Icon: HomeIcon },
@@ -12,6 +13,7 @@ const navItems = [
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { t, lang, toggle } = useLang()
   const [showSettings, setShowSettings] = useState(false)
 
   return (
@@ -21,15 +23,24 @@ export default function Layout() {
         <div className="max-w-xl mx-auto px-4 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-2 font-semibold text-base">
             <span className="text-xl">💰</span>
-            <span>เงินทองของฉันหายไปไหน</span>
+            <span className="font-display">เงินทองของฉันหายไปไหน</span>
           </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-xl hover:bg-white/15 transition-colors"
-            aria-label="ตั้งค่า"
-          >
-            ⚙️
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggle}
+              className="h-8 px-2.5 rounded-full flex items-center justify-center text-xs font-bold hover:bg-white/15 transition-colors border border-white/40"
+              aria-label="Toggle language"
+            >
+              {lang === 'th' ? 'EN' : 'ไทย'}
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-xl hover:bg-white/15 transition-colors"
+              aria-label={t('ตั้งค่า')}
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
       </header>
 
@@ -55,7 +66,7 @@ export default function Layout() {
             <span className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 border-4 border-white text-white text-3xl flex items-center justify-center shadow-[0_4px_12px_rgba(217,119,6,0.4)] transition-transform active:scale-95 hover:scale-105 leading-none pb-1">
               +
             </span>
-            <span className="relative -top-4">เพิ่ม</span>
+            <span className="relative -top-4">{t('เพิ่ม')}</span>
           </button>
 
           {navItems.slice(2).map((item) => (
@@ -68,6 +79,7 @@ export default function Layout() {
 }
 
 function NavItem({ to, label, Icon }) {
+  const { t } = useLang()
   return (
     <NavLink
       to={to}
@@ -79,7 +91,7 @@ function NavItem({ to, label, Icon }) {
       }
     >
       <Icon width={24} height={24} />
-      {label}
+      {t(label)}
     </NavLink>
   )
 }

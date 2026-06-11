@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* Custom font (user-provided) — Thin / Regular / Bold mapped to weight ranges */
+@font-face {
+  font-family: 'CK Puzzle';
+  src: url('./assets/fonts/CkPuzzleThin.ttf') format('truetype');
+  font-weight: 100 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CK Puzzle';
+  src: url('./assets/fonts/CkPuzzleRegular.ttf') format('truetype');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CK Puzzle';
+  src: url('./assets/fonts/CkPuzzleBold.ttf') format('truetype');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   /* Warm amber palette */
   --color-primary: #D97706;
@@ -27,7 +50,7 @@
 
   --color-cream: #FFF8E7;
 
-  --font-sans: 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
+  --font-sans: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
 }
 
 html {
@@ -35,7 +58,7 @@ html {
 }
 
 body {
-  font-family: 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
+  font-family: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
   background: #FFF8E7;
   color: #1F2937;
   min-height: 100vh;

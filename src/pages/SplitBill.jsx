@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
+import { useLang } from '../contexts/LanguageContext'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
 import PhotoCapture from '../components/PhotoCapture'
@@ -24,6 +25,7 @@ export default function SplitBill() {
     transactions, addTransaction, settleSplitPerson, people, addPerson, deletePerson,
     expenseCats, getCategory, addCustomCategory, deleteCustomCategory,
   } = useFinance()
+  const { t, fmtDate } = useLang()
   const [viewReceipt, setViewReceipt] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [showPeopleModal, setShowPeopleModal] = useState(false)
@@ -91,19 +93,19 @@ export default function SplitBill() {
   return (
     <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-slate-800">หารบิล</h1>
+        <h1 className="text-xl font-bold text-slate-800">{t('หารบิล')}</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowPeopleModal(true)}
             className="bg-white text-slate-600 px-3 py-2.5 rounded-xl text-sm font-medium border-2 border-slate-200"
           >
-            รายชื่อ
+            {t('รายชื่อ')}
           </button>
           <button
             onClick={() => { setForm(emptyForm); setShowModal(true) }}
             className="bg-gradient-to-br from-split to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px transition-transform"
           >
-            + สร้างบิล
+            {t('+ สร้างบิล')}
           </button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export default function SplitBill() {
       {oweSummary.length > 0 && (
         <section className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-5">
           <div className="flex items-center justify-between mb-3.5">
-            <h2 className="font-semibold text-slate-800">💰 ยอดค้างรับจากเพื่อน</h2>
+            <h2 className="font-semibold text-slate-800">{t('💰 ยอดค้างรับจากเพื่อน')}</h2>
             <span className="text-sm font-bold text-split">฿{formatMoney(totalOutstanding)}</span>
           </div>
           <div className="space-y-1">
@@ -125,14 +127,14 @@ export default function SplitBill() {
                   <div>
                     <div className="text-sm font-medium">{name}</div>
                     {v.received > 0 && (
-                      <div className="text-[10px] text-income">รับแล้ว ฿{formatMoney(v.received)}</div>
+                      <div className="text-[10px] text-income">{t('รับแล้ว')} ฿{formatMoney(v.received)}</div>
                     )}
                   </div>
                 </div>
                 {v.outstanding > 0 ? (
-                  <span className="text-sm font-bold text-split">ค้าง ฿{formatMoney(v.outstanding)}</span>
+                  <span className="text-sm font-bold text-split">{t('ค้าง')} ฿{formatMoney(v.outstanding)}</span>
                 ) : (
-                  <span className="text-xs font-semibold text-income">รับครบแล้ว ✓</span>
+                  <span className="text-xs font-semibold text-income">{t('รับครบแล้ว')} ✓</span>
                 )}
               </div>
             ))}
@@ -142,11 +144,11 @@ export default function SplitBill() {
 
       {/* History */}
       <section className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-5">
-        <h2 className="font-semibold text-slate-800 mb-3.5">📋 ประวัติบิลหาร</h2>
+        <h2 className="font-semibold text-slate-800 mb-3.5">{t('📋 ประวัติบิลหาร')}</h2>
         {splitTransactions.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-5xl mb-3">🧾</div>
-            <p className="text-sm text-slate-400">ยังไม่มีบิลหาร</p>
+            <p className="text-sm text-slate-400">{t('ยังไม่มีบิลหาร')}</p>
           </div>
         ) : (
           <div className="-my-1">
@@ -164,19 +166,19 @@ export default function SplitBill() {
                       {cat?.icon || '📝'}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{tx.note || cat?.name}</div>
+                      <div className="text-sm font-medium truncate">{tx.note || (cat ? t(cat.name) : '')}</div>
                       <div className="text-xs text-slate-400 mt-0.5">
-                        {new Date(tx.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                        {' · '}รวม ฿{formatMoney(tx.amount)} · คนละ ฿{formatMoney(perPerson)}
+                        {fmtDate(tx.date, { day: 'numeric', month: 'short' })}
+                        {' · '}{t('รวม')} ฿{formatMoney(tx.amount)} · {t('คนละ')} ฿{formatMoney(perPerson)}
                       </div>
                     </div>
                     {tx.photo && (
-                      <button onClick={() => setViewReceipt(tx.photo)} className="flex-shrink-0" title="ดูสลิป">
+                      <button onClick={() => setViewReceipt(tx.photo)} className="flex-shrink-0" title={t('ดูสลิป')}>
                         <img src={tx.photo} alt="สลิป" className="w-9 h-9 rounded-lg object-cover border border-slate-200" />
                       </button>
                     )}
                     <div className="text-right flex-shrink-0">
-                      <div className="text-[10px] text-slate-400">รับแล้ว</div>
+                      <div className="text-[10px] text-slate-400">{t('รับแล้ว')}</div>
                       <div className="text-sm font-bold text-income">{receivedCount}/{tx.splitWith.length}</div>
                     </div>
                   </div>
@@ -194,7 +196,7 @@ export default function SplitBill() {
                               ? 'bg-income-light text-income'
                               : 'bg-slate-100 text-slate-500 hover:bg-split-light hover:text-split'
                           }`}
-                          title={received ? 'ได้รับเงินคืนแล้ว (แตะเพื่อยกเลิก)' : 'แตะเมื่อได้รับเงินคืนแล้ว'}
+                          title={received ? t('ได้รับเงินคืนแล้ว (แตะเพื่อยกเลิก)') : t('แตะเมื่อได้รับเงินคืนแล้ว')}
                         >
                           <span>{received ? '✅' : '⬜'}</span>
                           {p} ฿{formatMoney(perPerson)}
@@ -204,7 +206,7 @@ export default function SplitBill() {
                   </div>
                   {receivedCount > 0 && (
                     <div className="text-[10px] text-income mt-1.5 pl-14">
-                      🤝 บันทึกเป็นรายรับอัตโนมัติแล้ว ฿{formatMoney(receivedCount * perPerson)}
+                      {t('🤝 บันทึกเป็นรายรับอัตโนมัติแล้ว')} ฿{formatMoney(receivedCount * perPerson)}
                     </div>
                   )}
                 </div>
@@ -215,7 +217,7 @@ export default function SplitBill() {
       </section>
 
       {/* Create split modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="สร้างบิลหาร">
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t('สร้างบิลหาร')}>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="relative">
             <input
@@ -231,7 +233,7 @@ export default function SplitBill() {
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">฿</span>
           </div>
 
-          <Field label="หมวดหมู่">
+          <Field label={t('หมวดหมู่')}>
             <CategoryPicker
               categories={expenseCats}
               selected={form.category}
@@ -241,17 +243,17 @@ export default function SplitBill() {
             />
           </Field>
 
-          <Field label="หมายเหตุ">
+          <Field label={t('หมายเหตุ')}>
             <input
               type="text"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
-              placeholder="เช่น ข้าวเย็น, ค่าห้อง..."
+              placeholder={t('เช่น ข้าวเย็น, ค่าห้อง...')}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-split transition-colors"
             />
           </Field>
 
-          <Field label="วันที่">
+          <Field label={t('วันที่')}>
             <input
               type="date"
               value={form.date}
@@ -260,20 +262,20 @@ export default function SplitBill() {
             />
           </Field>
 
-          <Field label="🧾 สลิป/ใบเสร็จ (ไม่บังคับ)">
+          <Field label={t('🧾 สลิป/ใบเสร็จ (ไม่บังคับ)')}>
             <PhotoCapture value={form.photo} onChange={(photo) => setForm({ ...form, photo })} accent="#EA580C" />
           </Field>
 
-          <Field label="เลือกคนที่จะหาร">
+          <Field label={t('เลือกคนที่จะหาร')}>
             {people.length === 0 ? (
               <p className="text-sm text-slate-400">
-                ยังไม่มีรายชื่อ —{' '}
+                {t('ยังไม่มีรายชื่อ —')}{' '}
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setShowPeopleModal(true) }}
                   className="text-split underline font-medium"
                 >
-                  เพิ่มรายชื่อก่อน
+                  {t('เพิ่มรายชื่อก่อน')}
                 </button>
               </p>
             ) : (
@@ -296,8 +298,8 @@ export default function SplitBill() {
 
           {splitAmount && (
             <div className="bg-split-light rounded-2xl p-4 text-center">
-              <div className="text-sm text-slate-600 mb-1">หาร {splitCount} คน (ฉัน + {form.splitWith.join(', ')})</div>
-              <div className="text-2xl font-bold text-split">฿{formatMoney(splitAmount)} / คน</div>
+              <div className="text-sm text-slate-600 mb-1">{t('หาร')} {splitCount} {t('คน')} ({t('ฉัน')} + {form.splitWith.join(', ')})</div>
+              <div className="text-2xl font-bold text-split">฿{formatMoney(splitAmount)} / {t('คน')}</div>
             </div>
           )}
 
@@ -307,13 +309,13 @@ export default function SplitBill() {
             className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-split to-orange-700 shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
-            บันทึกบิลหาร
+            {t('บันทึกบิลหาร')}
           </button>
         </form>
       </Modal>
 
       {/* People management modal */}
-      <Modal isOpen={showPeopleModal} onClose={() => setShowPeopleModal(false)} title="จัดการรายชื่อ">
+      <Modal isOpen={showPeopleModal} onClose={() => setShowPeopleModal(false)} title={t('จัดการรายชื่อ')}>
         <div className="space-y-4">
           <div className="flex gap-2">
             <input
@@ -321,16 +323,16 @@ export default function SplitBill() {
               value={newPersonName}
               onChange={(e) => setNewPersonName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddPerson()}
-              placeholder="ชื่อเพื่อน/คนที่จะหาร..."
+              placeholder={t('ชื่อเพื่อน/คนที่จะหาร...')}
               className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-split transition-colors"
             />
             <button onClick={handleAddPerson} className="px-4 py-3 bg-split text-white rounded-xl text-sm font-semibold">
-              เพิ่ม
+              {t('เพิ่ม')}
             </button>
           </div>
 
           {people.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-4">ยังไม่มีรายชื่อ</p>
+            <p className="text-sm text-slate-400 text-center py-4">{t('ยังไม่มีรายชื่อ')}</p>
           ) : (
             <div className="space-y-2">
               {people.map((p) => (

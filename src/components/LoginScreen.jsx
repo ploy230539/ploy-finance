@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LanguageContext'
 import { isInAppBrowser, isAndroid } from '../utils/browser'
 
 export default function LoginScreen() {
   const { signIn } = useAuth()
+  const { t, lang, toggle } = useLang()
   const inApp = isInAppBrowser()
   const [copied, setCopied] = useState(false)
 
@@ -32,30 +34,32 @@ export default function LoginScreen() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-primary-100 to-primary-300">
-      <div className="bg-white rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-8 max-w-sm w-full text-center">
+      <div className="bg-white rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-8 max-w-sm w-full text-center relative">
+        <button onClick={toggle} className="absolute top-4 right-4 h-8 px-2.5 rounded-full text-xs font-bold text-slate-500 border border-slate-200">
+          {lang === 'th' ? 'EN' : 'ไทย'}
+        </button>
         <div className="text-6xl mb-3">💰</div>
         <h1 className="text-2xl font-bold text-primary-800 mb-1">เงินทองของฉันหายไปไหน</h1>
-        <p className="text-sm text-slate-400 mb-6">จัดการรายรับรายจ่าย · ซิงค์ทุกอุปกรณ์</p>
+        <p className="text-sm text-slate-400 mb-6">{t('จัดการรายรับรายจ่าย · ซิงค์ทุกอุปกรณ์')}</p>
 
         {inApp ? (
           <div className="text-left">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-              <div className="font-semibold text-amber-800 text-sm mb-1">⚠️ กรุณาเปิดในเบราว์เซอร์</div>
+              <div className="font-semibold text-amber-800 text-sm mb-1">{t('⚠️ กรุณาเปิดในเบราว์เซอร์')}</div>
               <p className="text-xs text-amber-700 leading-relaxed">
-                การเข้าสู่ระบบด้วย Google ใช้ไม่ได้ในแอป Messenger/Facebook
-                ให้เปิดลิงก์นี้ใน <b>Chrome</b> หรือ <b>Safari</b> ก่อน
+                {t('การเข้าสู่ระบบด้วย Google ใช้ไม่ได้ในแอป Messenger/Facebook ให้เปิดลิงก์นี้ในเบราว์เซอร์ Chrome หรือ Safari ก่อน')}
               </p>
             </div>
             <ol className="text-xs text-slate-500 space-y-1.5 mb-4 list-decimal list-inside">
-              <li>แตะปุ่ม <b>⋯</b> หรือ <b>⋮</b> มุมขวาบน</li>
-              <li>เลือก <b>“เปิดในเบราว์เซอร์”</b> (Open in Chrome / Safari)</li>
+              <li>{t('แตะปุ่ม ⋯ หรือ ⋮ มุมขวาบน')}</li>
+              <li>{t('เลือก “เปิดในเบราว์เซอร์” (Open in Chrome / Safari)')}</li>
             </ol>
             <div className="flex gap-2">
               <button onClick={openExternal} className="flex-1 py-3 rounded-xl text-white text-sm font-semibold bg-gradient-to-br from-primary-600 to-primary-700">
-                เปิดในเบราว์เซอร์
+                {t('เปิดในเบราว์เซอร์')}
               </button>
               <button onClick={copyLink} className="px-4 py-3 rounded-xl text-sm font-semibold border-2 border-slate-200 text-slate-600">
-                {copied ? 'คัดลอกแล้ว ✓' : 'คัดลอกลิงก์'}
+                {copied ? `${t('คัดลอกแล้ว')} ✓` : t('คัดลอกลิงก์')}
               </button>
             </div>
           </div>
@@ -71,10 +75,10 @@ export default function LoginScreen() {
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               </svg>
-              เข้าสู่ระบบด้วย Google
+              {t('เข้าสู่ระบบด้วย Google')}
             </button>
             <p className="text-xs text-slate-400 mt-6 leading-relaxed">
-              ข้อมูลของคุณจะถูกเก็บอย่างปลอดภัยและซิงค์ข้ามเครื่องอัตโนมัติ
+              {t('ข้อมูลของคุณจะถูกเก็บอย่างปลอดภัยและซิงค์ข้ามเครื่องอัตโนมัติ')}
             </p>
           </>
         )}
