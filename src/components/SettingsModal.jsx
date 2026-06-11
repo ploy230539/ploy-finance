@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
+import { useAuth } from '../contexts/AuthContext'
 import Modal from './Modal'
 import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
 
 export default function SettingsModal({ isOpen, onClose }) {
   const { exportData, importData, getCategory, transactions } = useFinance()
+  const { user, signOut, enabled } = useAuth()
   const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
 
@@ -46,6 +48,25 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div className={`rounded-xl px-4 py-3 text-sm ${msg.ok ? 'bg-income-light text-income' : 'bg-expense-light text-expense'}`}>
             {msg.text}
           </div>
+        )}
+
+        {enabled && user && (
+          <section className="flex items-center gap-3 bg-primary-50 rounded-xl p-3">
+            {user.photoURL ? (
+              <img src={user.photoURL} alt="" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-200 flex items-center justify-center font-bold text-primary-800">
+                {(user.displayName || user.email || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate">{user.displayName || 'ผู้ใช้'}</div>
+              <div className="text-xs text-slate-400 truncate">{user.email}</div>
+            </div>
+            <button onClick={signOut} className="text-xs font-medium text-expense border border-expense/30 rounded-lg px-3 py-1.5">
+              ออกจากระบบ
+            </button>
+          </section>
         )}
 
         <section>

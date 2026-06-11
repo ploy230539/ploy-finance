@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
+import { useAuth } from './AuthContext'
+import { db, firebaseEnabled } from '../firebase'
 
 function ymNow() {
   const d = new Date()
@@ -66,6 +69,64 @@ export function FinanceProvider({ children }) {
   useEffect(() => saveToStorage('ploy_custom_categories', customCategories), [customCategories])
   useEffect(() => saveToStorage('ploy_budgets', budgets), [budgets])
   useEffect(() => saveToStorage('ploy_recurring', recurring), [recurring])
+
+  // --- Firebase cloud sync (only when logged in) ---
+  const { user } = useAuth()
+  const [cloudReady, setCloudReady] = useState(false)
+  const saveTimer = useRef(null)
+
+  const snapshotData = useCallback(
+    () => ({ transactions, installments, people, customCategories, budgets, recurring }),
+    [transactions, installments, people, customCategories, budgets, recurring]
+  )
+
+  // Load the user's cloud data on login (migrate local → cloud on first login)
+  useEffect(() => {
+    if (!firebaseEnabled || !user) {
+      setCloudReady(false)
+      return
+    }
+    let cancelled = false
+    setCloudReady(false)
+    ;(async () => {
+      try {
+        const ref = doc(db, 'users', user.uid)
+        const snap = await getDoc(ref)
+        if (cancelled) return
+        if (snap.exists()) {
+          const d = snap.data()
+          setTransactions(d.transactions || [])
+          setInstallments(d.installments || [])
+          setPeople(d.people || [])
+          setCustomCategories(d.customCategories || [])
+          setBudgets(d.budgets || {})
+          setRecurring(d.recurring || [])
+        } else {
+          // first login on this account → seed cloud with whatever is local
+          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring })
+        }
+        if (!cancelled) setCloudReady(true)
+      } catch (e) {
+        console.error('โหลดข้อมูลคลาวด์ไม่สำเร็จ:', e)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid])
+
+  // Save to cloud (debounced) whenever data changes after the cloud is ready
+  useEffect(() => {
+    if (!firebaseEnabled || !user || !cloudReady) return
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      setDoc(doc(db, 'users', user.uid), snapshotData()).catch((e) =>
+        console.error('บันทึกขึ้นคลาวด์ไม่สำเร็จ:', e)
+      )
+    }, 800)
+    return () => clearTimeout(saveTimer.current)
+  }, [transactions, installments, people, customCategories, budgets, recurring, user, cloudReady, snapshotData])
 
   // On load: auto-post any recurring rule that is due this month and not yet posted.
   const recurringRan = useRef(false)

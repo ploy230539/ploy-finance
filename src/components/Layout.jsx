@@ -19,9 +19,9 @@ export default function Layout() {
       {/* Gradient Header */}
       <header className="sticky top-0 z-40 bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-[0_2px_12px_rgba(217,119,6,0.3)]">
         <div className="max-w-xl mx-auto px-4 h-[60px] flex items-center justify-between">
-          <div className="flex items-center gap-2.5 font-semibold text-lg">
-            <span className="text-2xl">💰</span>
-            <span>Ploy Finance</span>
+          <div className="flex items-center gap-2 font-semibold text-base">
+            <span className="text-xl">💰</span>
+            <span>เงินทองของฉันหายไปไหน</span>
           </div>
           <button
             onClick={() => setShowSettings(true)}
