@@ -29,8 +29,20 @@ function shift(mode, d, delta) {
 }
 const MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
+function ymd(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+// Billing cycle range containing `ref`, starting on day `day` each month
+function cycleRange(ref, day) {
+  const d = new Date(ref)
+  let start = new Date(d.getFullYear(), d.getMonth(), day)
+  if (d.getDate() < day) start = new Date(d.getFullYear(), d.getMonth() - 1, day)
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, day)
+  return { start, end }
+}
+
 export default function Dashboard() {
-  const { transactions, balance, installments, monthlyInstallmentTotal, getCategory, budgets, wallets, walletBalances } = useFinance()
+  const { transactions, balance, installments, monthlyInstallmentTotal, getCategory, budgets, wallets, walletBalances, cycleStartDay } = useFinance()
   const { t, fmtDate } = useLang()
   const [mode, setMode] = useState('month')
   const [anchor, setAnchor] = useState(new Date())
@@ -38,10 +50,20 @@ export default function Dashboard() {
   const [showWallets, setShowWallets] = useState(false)
   const walletsTotal = wallets.reduce((s, w) => s + (walletBalances[w.id] || 0), 0)
 
+  const useCycle = mode === 'month' && cycleStartDay > 1
+  const cyc = useMemo(() => (useCycle ? cycleRange(anchor, cycleStartDay) : null), [useCycle, anchor, cycleStartDay])
   const key = keyOf(mode, anchor)
-  const isCurrent = key === keyOf(mode, new Date())
+  const isCurrent = useCycle
+    ? (() => { const td = new Date(); return td >= cyc.start && td < cyc.end })()
+    : key === keyOf(mode, new Date())
 
-  const periodTx = useMemo(() => transactions.filter((t) => t.date?.startsWith(key)), [transactions, key])
+  const periodTx = useMemo(() => {
+    if (useCycle) {
+      const s = ymd(cyc.start), e = ymd(cyc.end)
+      return transactions.filter((t) => t.date >= s && t.date < e)
+    }
+    return transactions.filter((t) => t.date?.startsWith(key))
+  }, [transactions, key, useCycle, cyc])
   const periodIncome = periodTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const periodExpense = periodTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
   const periodNet = periodIncome - periodExpense
@@ -90,6 +112,9 @@ export default function Dashboard() {
   const listTx = mode === 'day' ? periodTx : periodTx.slice(0, 6)
   const activeInstallments = installments.filter((i) => i.payments.some((p) => !p.paid))
 
+  const navLabel = useCycle
+    ? `${fmtDate(cyc.start, { day: 'numeric', month: 'short' })} – ${fmtDate(new Date(cyc.end.getFullYear(), cyc.end.getMonth(), cyc.end.getDate() - 1), { day: 'numeric', month: 'short', year: '2-digit' })}`
+    : labelOf(mode, anchor)
   const netLabel = t(mode === 'day' ? 'คงเหลือสุทธิวันนี้' : mode === 'year' ? 'คงเหลือสุทธิปีนี้' : 'คงเหลือสุทธิเดือนนี้')
   const emptyText = t(mode === 'day' ? 'วันนี้ยังไม่มีรายการ — แตะปุ่ม + เพื่อเริ่มบันทึก!' : mode === 'year' ? 'ปีนี้ยังไม่มีรายการ — แตะปุ่ม + เพื่อเริ่มบันทึก!' : 'เดือนนี้ยังไม่มีรายการ — แตะปุ่ม + เพื่อเริ่มบันทึก!')
 
@@ -116,7 +141,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between bg-white rounded-2xl p-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
         <button onClick={() => setAnchor(shift(mode, anchor, -1))} className="w-10 h-10 rounded-xl hover:bg-slate-100 text-slate-500 text-lg">‹</button>
         <div className="text-center">
-          <div className="text-sm font-semibold text-slate-800">{labelOf(mode, anchor)}</div>
+          <div className="text-sm font-semibold text-slate-800">{navLabel}</div>
           {!isCurrent && <button onClick={() => setAnchor(new Date())} className="text-[11px] text-primary-600">{t('กลับปัจจุบัน')}</button>}
         </div>
         <button onClick={() => setAnchor(shift(mode, anchor, 1))} disabled={isCurrent} className="w-10 h-10 rounded-xl hover:bg-slate-100 text-slate-500 text-lg disabled:opacity-25">›</button>

@@ -64,6 +64,7 @@ export function FinanceProvider({ children }) {
   )
   const [budgets, setBudgets] = useState(() => loadFromStorage('ploy_budgets', {}))
   const [recurring, setRecurring] = useState(() => loadFromStorage('ploy_recurring', []))
+  const [cycleStartDay, setCycleStartDayState] = useState(() => loadFromStorage('ploy_cycle_day', 1))
   const [wallets, setWallets] = useState(() => {
     const w = loadFromStorage('ploy_wallets', null)
     return w && w.length ? w : [DEFAULT_WALLET]
@@ -76,6 +77,12 @@ export function FinanceProvider({ children }) {
   useEffect(() => saveToStorage('ploy_budgets', budgets), [budgets])
   useEffect(() => saveToStorage('ploy_recurring', recurring), [recurring])
   useEffect(() => saveToStorage('ploy_wallets', wallets), [wallets])
+  useEffect(() => saveToStorage('ploy_cycle_day', cycleStartDay), [cycleStartDay])
+
+  const setCycleStartDay = useCallback((d) => {
+    const n = parseInt(d)
+    setCycleStartDayState(Number.isFinite(n) && n >= 1 && n <= 28 ? n : 1)
+  }, [])
 
   // --- Firebase cloud sync (only when logged in) ---
   const { user } = useAuth()
@@ -83,8 +90,8 @@ export function FinanceProvider({ children }) {
   const saveTimer = useRef(null)
 
   const snapshotData = useCallback(
-    () => ({ transactions, installments, people, customCategories, budgets, recurring, wallets }),
-    [transactions, installments, people, customCategories, budgets, recurring, wallets]
+    () => ({ transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay }),
+    [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay]
   )
 
   // Load the user's cloud data on login (migrate local → cloud on first login)
@@ -109,9 +116,10 @@ export function FinanceProvider({ children }) {
           setBudgets(d.budgets || {})
           setRecurring(d.recurring || [])
           setWallets(d.wallets?.length ? d.wallets : [DEFAULT_WALLET])
+          if (d.cycleStartDay) setCycleStartDayState(d.cycleStartDay)
         } else {
           // first login on this account → seed cloud with whatever is local
-          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring, wallets })
+          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay })
         }
         if (!cancelled) setCloudReady(true)
       } catch (e) {
@@ -356,8 +364,9 @@ export function FinanceProvider({ children }) {
       budgets,
       recurring,
       wallets,
+      cycleStartDay,
     }),
-    [transactions, installments, people, customCategories, budgets, recurring, wallets]
+    [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay]
   )
 
   const importData = useCallback((data) => {
@@ -371,6 +380,7 @@ export function FinanceProvider({ children }) {
     setBudgets(data.budgets || {})
     setRecurring(data.recurring || [])
     setWallets(data.wallets?.length ? data.wallets : [DEFAULT_WALLET])
+    setCycleStartDayState(data.cycleStartDay || 1)
   }, [])
 
   // Per-wallet balance: initialBalance + income − expense ± transfers.
@@ -440,6 +450,8 @@ export function FinanceProvider({ children }) {
         deleteWallet,
         addTransfer,
         walletBalances,
+        cycleStartDay,
+        setCycleStartDay,
         expenseCats,
         incomeCats,
         getCategory,

@@ -6,7 +6,7 @@ import Modal from './Modal'
 import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const { exportData, importData, getCategory, transactions } = useFinance()
+  const { exportData, importData, getCategory, transactions, cycleStartDay, setCycleStartDay } = useFinance()
   const { user, signOut, enabled } = useAuth()
   const { t } = useLang()
   const fileRef = useRef(null)
@@ -72,6 +72,25 @@ export default function SettingsModal({ isOpen, onClose }) {
         )}
 
         <section>
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">{t('📅 วันตัดรอบเดือน')}</h3>
+          <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+            {t('ตั้งวันเริ่มรอบเดือน เช่น เงินเดือนออกวันที่ 25 — มุมมองรายเดือนและงบจะนับ 25 ถึง 24 ของเดือนถัดไป')}
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">{t('เริ่มรอบทุกวันที่')}</span>
+            <select
+              value={cycleStartDay}
+              onChange={(e) => setCycleStartDay(e.target.value)}
+              className="px-3 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary-600 bg-white"
+            >
+              {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                <option key={d} value={d}>{d === 1 ? `1 (${t('ต้นเดือน')})` : d}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 pt-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-1">{t('💾 สำรองข้อมูล')}</h3>
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             {t('ข้อมูลเก็บในเครื่องนี้เท่านั้น — ควรสำรองเป็นระยะ ถ้าล้างเบราว์เซอร์หรือเปลี่ยนเครื่อง จะได้กู้คืนได้')}

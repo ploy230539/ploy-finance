@@ -167,6 +167,11 @@ export const EN = {
 
   // Settings
   'ตั้งค่า & ข้อมูล': 'Settings & Data',
+  '📅 วันตัดรอบเดือน': '📅 Billing cycle',
+  'ตั้งวันเริ่มรอบเดือน เช่น เงินเดือนออกวันที่ 25 — มุมมองรายเดือนและงบจะนับ 25 ถึง 24 ของเดือนถัดไป':
+    'Set the day your month starts (e.g. payday on the 25th) — monthly view & budgets run from the 25th to the 24th of next month',
+  'เริ่มรอบทุกวันที่': 'Cycle starts on day',
+  'ต้นเดือน': 'start of month',
   '💾 สำรองข้อมูล': '💾 Backup',
   'ข้อมูลเก็บในเครื่องนี้เท่านั้น — ควรสำรองเป็นระยะ ถ้าล้างเบราว์เซอร์หรือเปลี่ยนเครื่อง จะได้กู้คืนได้':
     'Data is stored on this device — back up regularly so you can restore if you clear the browser or switch devices',
