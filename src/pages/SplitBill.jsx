@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
+import { perHead } from '../utils/split'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
 import PhotoCapture from '../components/PhotoCapture'
@@ -31,6 +32,8 @@ export default function SplitBill() {
   const [showPeopleModal, setShowPeopleModal] = useState(false)
   const [newPersonName, setNewPersonName] = useState('')
   const [form, setForm] = useState(emptyForm)
+  const [buyMode, setBuyMode] = useState('split') // 'split' = หารบิล (รวมเรา) | 'proxy' = ฝากซื้อ (เก็บเต็ม)
+  const includeMe = buyMode === 'split'
 
   const splitTransactions = useMemo(
     () => transactions.filter((t) => t.splitWith?.length > 0),
@@ -41,7 +44,7 @@ export default function SplitBill() {
   const oweSummary = useMemo(() => {
     const summary = {}
     splitTransactions.forEach((tx) => {
-      const perPerson = tx.amount / (tx.splitWith.length + 1)
+      const perPerson = perHead(tx)
       tx.splitWith.forEach((person) => {
         if (!summary[person]) summary[person] = { outstanding: 0, received: 0 }
         if (tx.settlements?.[person]?.received) summary[person].received += perPerson
@@ -78,17 +81,18 @@ export default function SplitBill() {
       type: 'expense',
       category: form.category,
       amount,
-      note: form.note || `หาร ${form.splitWith.length + 1} คน`,
+      note: form.note || (includeMe ? `หาร ${form.splitWith.length + 1} คน` : 'ฝากซื้อ'),
       date: form.date,
       splitWith: form.splitWith,
+      includeMe,
       photo: form.photo,
     })
     setForm(emptyForm)
     setShowModal(false)
   }
 
-  const splitCount = form.splitWith.length + 1
-  const splitAmount = form.amount && splitCount > 1 ? parseFloat(form.amount) / splitCount : null
+  const splitCount = form.splitWith.length + (includeMe ? 1 : 0)
+  const splitAmount = form.amount && form.splitWith.length > 0 ? parseFloat(form.amount) / splitCount : null
 
   return (
     <div className="space-y-4 fade-in">
@@ -102,7 +106,7 @@ export default function SplitBill() {
             {t('รายชื่อ')}
           </button>
           <button
-            onClick={() => { setForm(emptyForm); setShowModal(true) }}
+            onClick={() => { setForm(emptyForm); setBuyMode('split'); setShowModal(true) }}
             className="bg-gradient-to-br from-split to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px transition-transform"
           >
             {t('+ สร้างบิล')}
@@ -154,7 +158,8 @@ export default function SplitBill() {
           <div className="-my-1">
             {splitTransactions.map((tx) => {
               const cat = getCategory(tx.category)
-              const perPerson = tx.amount / (tx.splitWith.length + 1)
+              const perPerson = perHead(tx)
+              const isProxy = tx.includeMe === false
               const receivedCount = tx.splitWith.filter((p) => tx.settlements?.[p]?.received).length
               return (
                 <div key={tx.id} className="py-3 border-b border-slate-50 last:border-0">
@@ -166,10 +171,13 @@ export default function SplitBill() {
                       {cat?.icon || '📝'}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{tx.note || (cat ? t(cat.name) : '')}</div>
+                      <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                        <span className="truncate">{tx.note || (cat ? t(cat.name) : '')}</span>
+                        {isProxy && <span className="text-[10px] bg-split-light text-split px-1.5 py-0.5 rounded-full flex-shrink-0">{t('ฝากซื้อ')}</span>}
+                      </div>
                       <div className="text-xs text-slate-400 mt-0.5">
                         {fmtDate(tx.date, { day: 'numeric', month: 'short' })}
-                        {' · '}{t('รวม')} ฿{formatMoney(tx.amount)} · {t('คนละ')} ฿{formatMoney(perPerson)}
+                        {' · '}{t('รวม')} ฿{formatMoney(tx.amount)} · {isProxy ? t('เก็บคนละ') : t('คนละ')} ฿{formatMoney(perPerson)}
                       </div>
                     </div>
                     {tx.photo && (
@@ -217,8 +225,20 @@ export default function SplitBill() {
       </section>
 
       {/* Create split modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t('สร้างบิลหาร')}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={includeMe ? t('สร้างบิลหาร') : t('ฝากซื้อของ')}>
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Mode: split with me vs proxy-buy (collect full) */}
+          <div className="flex rounded-xl overflow-hidden border-2 border-slate-200">
+            <button type="button" onClick={() => setBuyMode('split')}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${includeMe ? 'bg-split text-white' : 'bg-white text-slate-500'}`}>
+              {t('👥 หารบิล (รวมเรา)')}
+            </button>
+            <button type="button" onClick={() => setBuyMode('proxy')}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${!includeMe ? 'bg-split text-white' : 'bg-white text-slate-500'}`}>
+              {t('🛍️ ฝากซื้อ (เก็บเต็ม)')}
+            </button>
+          </div>
+
           <div className="relative">
             <input
               type="number"
@@ -298,7 +318,11 @@ export default function SplitBill() {
 
           {splitAmount && (
             <div className="bg-split-light rounded-2xl p-4 text-center">
-              <div className="text-sm text-slate-600 mb-1">{t('หาร')} {splitCount} {t('คน')} ({t('ฉัน')} + {form.splitWith.join(', ')})</div>
+              <div className="text-sm text-slate-600 mb-1">
+                {includeMe
+                  ? `${t('หาร')} ${splitCount} ${t('คน')} (${t('ฉัน')} + ${form.splitWith.join(', ')})`
+                  : `${t('เก็บเต็มจาก')} ${form.splitWith.join(', ')} (${t('ไม่รวมเรา')})`}
+              </div>
               <div className="text-2xl font-bold text-split">฿{formatMoney(splitAmount)} / {t('คน')}</div>
             </div>
           )}
@@ -309,7 +333,7 @@ export default function SplitBill() {
             className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-split to-orange-700 shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
-            {t('บันทึกบิลหาร')}
+            {includeMe ? t('บันทึกบิลหาร') : t('บันทึกฝากซื้อ')}
           </button>
         </form>
       </Modal>

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, u
 import { v4 as uuidv4 } from 'uuid'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
+import { perHead } from '../utils/split'
 import { useAuth } from './AuthContext'
 import { db, firebaseEnabled } from '../firebase'
 
@@ -232,7 +233,7 @@ export function FinanceProvider({ children }) {
     setTransactions((prev) => {
       const tx = prev.find((t) => t.id === txId)
       if (!tx) return prev
-      const perPerson = tx.amount / ((tx.splitWith?.length || 0) + 1)
+      const perPerson = perHead(tx)
       const settlements = { ...(tx.settlements || {}) }
       const cur = settlements[name] || { received: false, incomeTxId: null }
 

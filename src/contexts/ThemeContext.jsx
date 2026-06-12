@@ -5,6 +5,7 @@ export const THEMES = [
   { id: 'muji', name: 'เขียวมูจิ', nameEn: 'Sage', color: '#7C8A5A' },
   { id: 'ocean', name: 'ฟ้าหม่น', nameEn: 'Ocean', color: '#3B7BB0' },
   { id: 'rose', name: 'ชมพูหวาน', nameEn: 'Rose', color: '#C45C7C' },
+  { id: 'dark', name: 'โหมดมืด', nameEn: 'Dark', color: '#2B2A26' },
 ]
 
 const ThemeContext = createContext()

@@ -353,7 +353,7 @@ function TxRow({ tx }) {
         <div className="text-sm font-medium truncate">{tx.note || (cat ? t(cat.name) : '')}</div>
         <div className="text-xs text-slate-400">
           {fmtDate(tx.date, { day: 'numeric', month: 'short', year: '2-digit' })}
-          {tx.splitWith?.length > 0 && ` · ${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')}`}
+          {tx.splitWith?.length > 0 && (tx.includeMe === false ? ` · ${t('ฝากซื้อ')}` : ` · ${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')}`)}
         </div>
       </div>
       <span className={`text-sm font-bold ${isIncome ? 'text-income' : 'text-expense'}`}>{isIncome ? '+' : '-'}฿{formatMoney(tx.amount)}</span>

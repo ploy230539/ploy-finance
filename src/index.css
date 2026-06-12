@@ -93,6 +93,23 @@ html[data-theme='rose'] {
   --color-cream: #FBF4F5; --color-text: #3D2A30;
 }
 
+/* ── Dark mode (inverts slate neutrals + surfaces, keeps amber accent) ── */
+html[data-theme='dark'] {
+  --color-primary: #E0942A; --color-primary-dark: #FBBF24; --color-primary-light: #3A2E14;
+  --color-primary-50: #271F0F; --color-primary-100: #3A2E14; --color-primary-200: #574420;
+  --color-primary-300: #8A6A2E; --color-primary-400: #B98322; --color-primary-500: #D08A1C;
+  --color-primary-600: #D9921E; --color-primary-700: #B47416; --color-primary-800: #FBBF24; --color-primary-900: #FCD34D;
+  --color-income: #4ADE80; --color-income-light: #16331F;
+  --color-expense: #F87171; --color-expense-light: #371A1A;
+  --color-installment: #A78BFA; --color-installment-light: #241E3A;
+  --color-split: #FB923C; --color-split-light: #382414;
+  --color-cream: #15140F; --color-text: #ECEAE1;
+  --color-white: #232220;
+  --color-slate-50: #2B2A26; --color-slate-100: #34332E; --color-slate-200: #45443D;
+  --color-slate-300: #57564D; --color-slate-400: #A8A498; --color-slate-500: #BCB8AC;
+  --color-slate-600: #CECABE; --color-slate-700: #DCD8CC; --color-slate-800: #ECEAE1; --color-slate-900: #F5F3EA;
+}
+
 html {
   -webkit-tap-highlight-color: transparent;
 }
