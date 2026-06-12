@@ -2,13 +2,15 @@ import { useRef, useState } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LanguageContext'
+import { useTheme } from '../contexts/ThemeContext'
 import Modal from './Modal'
 import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
 
 export default function SettingsModal({ isOpen, onClose }) {
   const { exportData, importData, getCategory, transactions, cycleStartDay, setCycleStartDay, removeAllPhotos, removePhotosBefore } = useFinance()
   const { user, signOut, enabled } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
+  const { theme, setTheme, themes } = useTheme()
   const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
   const [beforeDate, setBeforeDate] = useState('')
@@ -93,6 +95,24 @@ export default function SettingsModal({ isOpen, onClose }) {
         )}
 
         <section>
+          <h3 className="text-sm font-semibold text-slate-700 mb-2">{t('🎨 ธีมสี')}</h3>
+          <div className="grid grid-cols-4 gap-2">
+            {themes.map((th) => (
+              <button
+                key={th.id}
+                onClick={() => setTheme(th.id)}
+                className={`flex flex-col items-center gap-1.5 py-2.5 rounded-xl border-2 transition-all ${
+                  theme === th.id ? 'border-primary-600 bg-primary-50' : 'border-slate-200'
+                }`}
+              >
+                <span className="w-7 h-7 rounded-full" style={{ backgroundColor: th.color }} />
+                <span className="text-[11px] text-slate-600">{lang === 'en' ? th.nameEn : th.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 pt-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-1">{t('📅 วันตัดรอบเดือน')}</h3>
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             {t('ตั้งวันเริ่มรอบเดือน เช่น เงินเดือนออกวันที่ 25 — มุมมองรายเดือนและงบจะนับ 25 ถึง 24 ของเดือนถัดไป')}

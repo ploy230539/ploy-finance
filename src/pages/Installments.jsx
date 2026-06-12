@@ -85,7 +85,7 @@ export default function Installments() {
         <h1 className="text-xl font-bold text-slate-800">{t('หนี้สิน & ผ่อนชำระ')}</h1>
         <button
           onClick={() => { setForm(emptyForm); setShowModal(true) }}
-          className="bg-gradient-to-br from-installment to-[#7D6240] text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(124,107,83,0.3)] active:translate-y-px transition-transform"
+          className="bg-gradient-to-br from-installment to-violet-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(124,58,237,0.3)] active:translate-y-px transition-transform"
         >
           {t('+ เพิ่มรายการ')}
         </button>
@@ -171,7 +171,7 @@ export default function Installments() {
                     <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: allPaid ? '#6B8A4E' : type.color }}
+                        style={{ width: `${pct}%`, backgroundColor: allPaid ? 'var(--color-income)' : type.color }}
                       />
                     </div>
                     <span className="text-xs text-slate-500 w-9 text-right">{pct}%</span>
@@ -324,7 +324,7 @@ export default function Installments() {
           <button
             type="submit"
             disabled={!form.name || !form.totalAmount || !form.totalMonths}
-            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-installment to-[#7D6240] shadow-[0_4px_12px_rgba(124,107,83,0.3)] active:translate-y-px"
+            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-installment to-violet-700 shadow-[0_4px_12px_rgba(124,58,237,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
             {t('บันทึก')}

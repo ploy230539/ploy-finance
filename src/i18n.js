@@ -167,6 +167,7 @@ export const EN = {
 
   // Settings
   'ตั้งค่า & ข้อมูล': 'Settings & Data',
+  '🎨 ธีมสี': '🎨 Color theme',
   '📅 วันตัดรอบเดือน': '📅 Billing cycle',
   'ตั้งวันเริ่มรอบเดือน เช่น เงินเดือนออกวันที่ 25 — มุมมองรายเดือนและงบจะนับ 25 ถึง 24 ของเดือนถัดไป':
     'Set the day your month starts (e.g. payday on the 25th) — monthly view & budgets run from the 25th to the 24th of next month',

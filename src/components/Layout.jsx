@@ -19,7 +19,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col pb-[86px]">
       {/* Gradient Header */}
-      <header className="sticky top-0 z-40 bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-[0_2px_12px_rgba(124,138,90,0.3)]">
+      <header className="sticky top-0 z-40 bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-[0_2px_12px_rgba(217,119,6,0.3)]">
         <div className="max-w-xl mx-auto px-4 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-2 font-semibold text-base">
             <span className="text-xl">💰</span>
@@ -63,7 +63,7 @@ export default function Layout() {
             onClick={() => navigate('/transactions', { state: { openAdd: true } })}
             className="flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-medium text-slate-500"
           >
-            <span className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 border-4 border-white text-white text-3xl flex items-center justify-center shadow-[0_4px_12px_rgba(124,138,90,0.4)] transition-transform active:scale-95 hover:scale-105 leading-none pb-1">
+            <span className="relative -top-5 w-14 h-14 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 border-4 border-white text-white text-3xl flex items-center justify-center shadow-[0_4px_12px_rgba(217,119,6,0.4)] transition-transform active:scale-95 hover:scale-105 leading-none pb-1">
               +
             </span>
             <span className="relative -top-4">{t('เพิ่ม')}</span>

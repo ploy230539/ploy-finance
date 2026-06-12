@@ -17,7 +17,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
   const { t } = useLang()
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
-  const [draft, setDraft] = useState({ name: '', icon: '🍜', color: '#7C8A5A' })
+  const [draft, setDraft] = useState({ name: '', icon: '🍜', color: '#D97706' })
 
   const filtered = categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
 
@@ -27,7 +27,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
     if (!name || !icon) return
     const cat = onAddCategory({ name, icon, color: draft.color })
     if (cat?.id) onSelect(cat.id)
-    setDraft({ name: '', icon: '🍜', color: '#7C8A5A' })
+    setDraft({ name: '', icon: '🍜', color: '#D97706' })
     setCreating(false)
   }
 

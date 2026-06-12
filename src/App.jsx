@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LanguageProvider } from './contexts/LanguageContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { FinanceProvider } from './contexts/FinanceContext'
 import Layout from './components/Layout'
@@ -11,11 +12,13 @@ import SplitBill from './pages/SplitBill'
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <Gate />
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <Gate />
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   )
 }
 

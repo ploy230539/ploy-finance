@@ -148,7 +148,7 @@ export default function Dashboard() {
       </div>
 
       {/* Hero */}
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-[0_8px_24px_rgba(124,138,90,0.3)]">
+      <div className="rounded-3xl p-5 bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-[0_8px_24px_rgba(217,119,6,0.3)]">
         <div className="text-sm text-white/80 mb-1">{netLabel}</div>
         <div className="text-3xl font-bold mb-4">{periodNet < 0 ? '-' : ''}฿{formatMoney(Math.abs(periodNet))}</div>
         <div className="flex gap-3">
@@ -220,7 +220,7 @@ export default function Dashboard() {
               {budgetRows.map(({ category, limit, spent }) => {
                 const pct = limit > 0 ? (spent / limit) * 100 : 0
                 const over = spent > limit
-                const color = over ? '#B0694F' : pct >= 80 ? '#BE9A6A' : '#6B8A4E'
+                const color = over ? 'var(--color-expense)' : pct >= 80 ? '#D97706' : 'var(--color-income)'
                 return (
                   <div key={category?.id || 'x'}>
                     <div className="flex items-center justify-between mb-1 text-sm">
@@ -255,7 +255,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-installment to-[#B79A77] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-gradient-to-r from-installment to-violet-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs text-slate-500 w-9 text-right">{pct}%</span>
                   </div>

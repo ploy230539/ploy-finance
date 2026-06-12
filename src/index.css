@@ -24,33 +24,73 @@
 }
 
 @theme {
-  /* MUJI palette — sage green, soft brown, warm paper white */
-  --color-primary: #7C8A5A;
-  --color-primary-dark: #4C5635;
-  --color-primary-light: #E8EBDD;
-  --color-primary-50: #F4F6EE;
-  --color-primary-100: #E8EBDD;
-  --color-primary-200: #D4D9C0;
-  --color-primary-300: #BAC29D;
-  --color-primary-400: #A0AB7E;
-  --color-primary-500: #8A9665;
-  --color-primary-600: #7C8A5A;
-  --color-primary-700: #626E46;
-  --color-primary-800: #4C5635;
-  --color-primary-900: #3A4129;
+  /* Default theme: warm amber (selectable — see [data-theme] overrides below) */
+  --color-primary: #D97706;
+  --color-primary-dark: #92400E;
+  --color-primary-light: #FEF3C7;
+  --color-primary-50: #FFFBEB;
+  --color-primary-100: #FEF3C7;
+  --color-primary-200: #FDE68A;
+  --color-primary-300: #FCD34D;
+  --color-primary-400: #FBBF24;
+  --color-primary-500: #F59E0B;
+  --color-primary-600: #D97706;
+  --color-primary-700: #B45309;
+  --color-primary-800: #92400E;
+  --color-primary-900: #78350F;
 
-  --color-income: #6B8A4E;
-  --color-income-light: #E7EDDA;
-  --color-expense: #B0694F;
-  --color-expense-light: #F1E4DC;
-  --color-installment: #9C7B53;
-  --color-installment-light: #ECE3D6;
-  --color-split: #BE9A6A;
-  --color-split-light: #F0E8D9;
+  --color-income: #059669;
+  --color-income-light: #D1FAE5;
+  --color-expense: #DC2626;
+  --color-expense-light: #FEE2E2;
+  --color-installment: #7C3AED;
+  --color-installment-light: #EDE9FE;
+  --color-split: #EA580C;
+  --color-split-light: #FFEDD5;
 
-  --color-cream: #F7F5EE;
+  --color-cream: #FFF8E7;
+  --color-text: #1F2937;
 
   --font-sans: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
+}
+
+/* ── MUJI: sage green / soft brown / paper white ── */
+html[data-theme='muji'] {
+  --color-primary: #7C8A5A; --color-primary-dark: #4C5635; --color-primary-light: #E8EBDD;
+  --color-primary-50: #F4F6EE; --color-primary-100: #E8EBDD; --color-primary-200: #D4D9C0;
+  --color-primary-300: #BAC29D; --color-primary-400: #A0AB7E; --color-primary-500: #8A9665;
+  --color-primary-600: #7C8A5A; --color-primary-700: #626E46; --color-primary-800: #4C5635; --color-primary-900: #3A4129;
+  --color-income: #6B8A4E; --color-income-light: #E7EDDA;
+  --color-expense: #B0694F; --color-expense-light: #F1E4DC;
+  --color-installment: #9C7B53; --color-installment-light: #ECE3D6;
+  --color-split: #BE9A6A; --color-split-light: #F0E8D9;
+  --color-cream: #F7F5EE; --color-text: #45433D;
+}
+
+/* ── Ocean: dusty blue ── */
+html[data-theme='ocean'] {
+  --color-primary: #3B7BB0; --color-primary-dark: #1E466B; --color-primary-light: #DCEAF4;
+  --color-primary-50: #EFF5FA; --color-primary-100: #DCEAF4; --color-primary-200: #BAD3E8;
+  --color-primary-300: #8FB6D8; --color-primary-400: #6498C4; --color-primary-500: #467FAE;
+  --color-primary-600: #3B7BB0; --color-primary-700: #2F5F88; --color-primary-800: #1E466B; --color-primary-900: #16334D;
+  --color-income: #2E9E78; --color-income-light: #D6F0E5;
+  --color-expense: #D55C4A; --color-expense-light: #F8E2DD;
+  --color-installment: #6E73C7; --color-installment-light: #E5E6F7;
+  --color-split: #3C9CC4; --color-split-light: #DBEFF6;
+  --color-cream: #F2F6F9; --color-text: #213244;
+}
+
+/* ── Rose: sweet dusty pink ── */
+html[data-theme='rose'] {
+  --color-primary: #C45C7C; --color-primary-dark: #7C2E45; --color-primary-light: #F7DEE6;
+  --color-primary-50: #FCF1F4; --color-primary-100: #F7DEE6; --color-primary-200: #EFBFCE;
+  --color-primary-300: #E298AE; --color-primary-400: #D4768F; --color-primary-500: #C45C7C;
+  --color-primary-600: #B14A68; --color-primary-700: #8F3B52; --color-primary-800: #7C2E45; --color-primary-900: #561E30;
+  --color-income: #4F9B6A; --color-income-light: #DDF0E2;
+  --color-expense: #D14D6E; --color-expense-light: #F8DEE6;
+  --color-installment: #A857A0; --color-installment-light: #F1E0EF;
+  --color-split: #DA7A8E; --color-split-light: #F8E6EA;
+  --color-cream: #FBF4F5; --color-text: #3D2A30;
 }
 
 html {
@@ -59,8 +99,8 @@ html {
 
 body {
   font-family: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
-  background: #F7F5EE;
-  color: #45433D;
+  background: var(--color-cream);
+  color: var(--color-text);
   min-height: 100vh;
 }
 
