@@ -183,6 +183,15 @@ export function FinanceProvider({ children }) {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
 
+  // Free up storage: strip receipt photos but keep the transactions
+  const removeAllPhotos = useCallback(() => {
+    setTransactions((prev) => prev.map((t) => (t.photo ? { ...t, photo: null } : t)))
+  }, [])
+
+  const removePhotosBefore = useCallback((dateStr) => {
+    setTransactions((prev) => prev.map((t) => (t.photo && t.date < dateStr ? { ...t, photo: null } : t)))
+  }, [])
+
   // --- Wallets ---
   const addWallet = useCallback((w) => {
     const newWallet = { id: 'w_' + uuidv4().slice(0, 8), initialBalance: 0, ...w }
@@ -427,6 +436,8 @@ export function FinanceProvider({ children }) {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        removeAllPhotos,
+        removePhotosBefore,
         settleSplitPerson,
         installments,
         addInstallment,

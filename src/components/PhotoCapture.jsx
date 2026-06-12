@@ -3,7 +3,7 @@ import { compressImage } from '../utils/image'
 import { useLang } from '../contexts/LanguageContext'
 
 // Capture or pick a receipt/slip photo, compress it, return a data URL via onChange.
-export default function PhotoCapture({ value, onChange, accent = '#D97706' }) {
+export default function PhotoCapture({ value, onChange, accent = '#7C8A5A' }) {
   const { t } = useLang()
   const inputRef = useRef(null)
   const [loading, setLoading] = useState(false)

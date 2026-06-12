@@ -24,31 +24,31 @@
 }
 
 @theme {
-  /* Warm amber palette */
-  --color-primary: #D97706;
-  --color-primary-dark: #92400E;
-  --color-primary-light: #FEF3C7;
-  --color-primary-50: #FFFBEB;
-  --color-primary-100: #FEF3C7;
-  --color-primary-200: #FDE68A;
-  --color-primary-300: #FCD34D;
-  --color-primary-400: #FBBF24;
-  --color-primary-500: #F59E0B;
-  --color-primary-600: #D97706;
-  --color-primary-700: #B45309;
-  --color-primary-800: #92400E;
-  --color-primary-900: #78350F;
+  /* MUJI palette — sage green, soft brown, warm paper white */
+  --color-primary: #7C8A5A;
+  --color-primary-dark: #4C5635;
+  --color-primary-light: #E8EBDD;
+  --color-primary-50: #F4F6EE;
+  --color-primary-100: #E8EBDD;
+  --color-primary-200: #D4D9C0;
+  --color-primary-300: #BAC29D;
+  --color-primary-400: #A0AB7E;
+  --color-primary-500: #8A9665;
+  --color-primary-600: #7C8A5A;
+  --color-primary-700: #626E46;
+  --color-primary-800: #4C5635;
+  --color-primary-900: #3A4129;
 
-  --color-income: #059669;
-  --color-income-light: #D1FAE5;
-  --color-expense: #DC2626;
-  --color-expense-light: #FEE2E2;
-  --color-installment: #7C3AED;
-  --color-installment-light: #EDE9FE;
-  --color-split: #EA580C;
-  --color-split-light: #FFEDD5;
+  --color-income: #6B8A4E;
+  --color-income-light: #E7EDDA;
+  --color-expense: #B0694F;
+  --color-expense-light: #F1E4DC;
+  --color-installment: #9C7B53;
+  --color-installment-light: #ECE3D6;
+  --color-split: #BE9A6A;
+  --color-split-light: #F0E8D9;
 
-  --color-cream: #FFF8E7;
+  --color-cream: #F7F5EE;
 
   --font-sans: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
 }
@@ -59,8 +59,8 @@ html {
 
 body {
   font-family: 'CK Puzzle', 'Prompt', 'Leelawadee UI', 'Noto Sans Thai', sans-serif;
-  background: #FFF8E7;
-  color: #1F2937;
+  background: #F7F5EE;
+  color: #45433D;
   min-height: 100vh;
 }
 

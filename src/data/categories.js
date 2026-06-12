@@ -58,11 +58,11 @@ export const incomeCategories = [
 
 // ประเภทหนี้/ผ่อนชำระ — ตั้งแต่บัตรเครดิตระยะสั้น ถึงสินเชื่อระยะยาว
 export const loanTypes = [
-  { id: 'credit', name: 'บัตรเครดิต', icon: '💳', color: '#7c3aed' },
-  { id: 'personal', name: 'สินเชื่อส่วนบุคคล', icon: '🏦', color: '#2563eb' },
-  { id: 'car', name: 'ผ่อนรถ', icon: '🚗', color: '#0891b2' },
-  { id: 'house', name: 'ผ่อนบ้าน', icon: '🏠', color: '#059669' },
-  { id: 'other', name: 'หนี้อื่นๆ', icon: '📄', color: '#6b7280' },
+  { id: 'credit', name: 'บัตรเครดิต', icon: '💳', color: '#9C7B53' },
+  { id: 'personal', name: 'สินเชื่อส่วนบุคคล', icon: '🏦', color: '#7A8BA0' },
+  { id: 'car', name: 'ผ่อนรถ', icon: '🚗', color: '#6E9488' },
+  { id: 'house', name: 'ผ่อนบ้าน', icon: '🏠', color: '#788C4F' },
+  { id: 'other', name: 'หนี้อื่นๆ', icon: '📄', color: '#9A9384' },
 ]
 
 export function getLoanType(id) {

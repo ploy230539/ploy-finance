@@ -402,7 +402,7 @@ export default function Transactions() {
           <button
             type="submit"
             disabled={!form.category || !form.amount}
-            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-primary-600 to-primary-700 shadow-[0_4px_12px_rgba(217,119,6,0.3)] active:translate-y-px"
+            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-primary-600 to-primary-700 shadow-[0_4px_12px_rgba(124,138,90,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
             {editingId ? t('บันทึกการแก้ไข') : t('บันทึกรายการ')}

@@ -103,7 +103,7 @@ export default function SplitBill() {
           </button>
           <button
             onClick={() => { setForm(emptyForm); setShowModal(true) }}
-            className="bg-gradient-to-br from-split to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px transition-transform"
+            className="bg-gradient-to-br from-split to-[#A07A4C] text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(190,154,106,0.3)] active:translate-y-px transition-transform"
           >
             {t('+ สร้างบิล')}
           </button>
@@ -306,7 +306,7 @@ export default function SplitBill() {
           <button
             type="submit"
             disabled={!form.category || !form.amount || form.splitWith.length === 0}
-            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-split to-orange-700 shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px"
+            className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-split to-[#A07A4C] shadow-[0_4px_12px_rgba(190,154,106,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
             {t('บันทึกบิลหาร')}

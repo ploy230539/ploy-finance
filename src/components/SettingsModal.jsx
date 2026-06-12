@@ -6,11 +6,32 @@ import Modal from './Modal'
 import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const { exportData, importData, getCategory, transactions, cycleStartDay, setCycleStartDay } = useFinance()
+  const { exportData, importData, getCategory, transactions, cycleStartDay, setCycleStartDay, removeAllPhotos, removePhotosBefore } = useFinance()
   const { user, signOut, enabled } = useAuth()
   const { t } = useLang()
   const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
+  const [beforeDate, setBeforeDate] = useState('')
+
+  const photoTxs = transactions.filter((tx) => tx.photo)
+  const photoBytes = photoTxs.reduce((s, tx) => s + (tx.photo?.length || 0), 0)
+  const photoSize = photoBytes > 1048576 ? (photoBytes / 1048576).toFixed(1) + ' MB' : Math.round(photoBytes / 1024) + ' KB'
+
+  function handleRemoveAllPhotos() {
+    if (photoTxs.length === 0) return flash(t('ไม่มีรูปสลิปให้ลบ'), false)
+    if (!confirm(`${t('ลบรูปสลิปทั้งหมด?')} (${photoTxs.length})\n\n${t('รายการยังอยู่ครบ ลบเฉพาะรูป')}`)) return
+    removeAllPhotos()
+    flash(t('ลบรูปสลิปทั้งหมดแล้ว') + ' ✓')
+  }
+
+  function handleRemoveBefore() {
+    if (!beforeDate) return
+    const n = photoTxs.filter((tx) => tx.date < beforeDate).length
+    if (n === 0) return flash(t('ไม่มีรูปก่อนวันที่เลือก'), false)
+    if (!confirm(`${t('ลบรูปก่อนวันที่นี้?')} (${n})`)) return
+    removePhotosBefore(beforeDate)
+    flash(t('ลบรูปเก่าแล้ว') + ' ✓')
+  }
 
   function flash(text, ok = true) {
     setMsg({ text, ok })
@@ -107,6 +128,34 @@ export default function SettingsModal({ isOpen, onClose }) {
               className="py-3 rounded-xl text-sm font-semibold border-2 border-slate-200 text-slate-600 active:translate-y-px"
             >
               {t('📊 ส่งออก Excel')}
+            </button>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 pt-5">
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">{t('🗂️ จัดการพื้นที่ (รูปสลิป)')}</h3>
+          <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+            {t('รูปสลิปใช้พื้นที่')} <b className="text-slate-600">{photoSize}</b> {t('จาก')} {photoTxs.length} {t('รายการ')} — {t('ลบรูปเพื่อคืนพื้นที่ (รายการยังอยู่)')}
+          </p>
+          <button
+            onClick={handleRemoveAllPhotos}
+            className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-expense/30 text-expense active:translate-y-px mb-2"
+          >
+            {t('🗑️ ลบรูปสลิปทั้งหมด')}
+          </button>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={beforeDate}
+              onChange={(e) => setBeforeDate(e.target.value)}
+              className="flex-1 px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary-600"
+            />
+            <button
+              onClick={handleRemoveBefore}
+              disabled={!beforeDate}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-slate-200 text-slate-600 disabled:opacity-40 whitespace-nowrap"
+            >
+              {t('ลบรูปก่อนวันนี้')}
             </button>
           </div>
         </section>
