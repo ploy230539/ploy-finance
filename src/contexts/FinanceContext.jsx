@@ -13,6 +13,14 @@ function ymNow() {
 
 const DEFAULT_WALLET = { id: 'w_cash', name: 'เงินสด', type: 'cash', icon: '💵', color: '#059669', initialBalance: 0 }
 
+// Union two arrays by id — keeps cloud items + any local items not yet synced (prevents data loss)
+function mergeById(cloud, local) {
+  const c = Array.isArray(cloud) ? cloud : []
+  if (!Array.isArray(local) || local.length === 0) return c
+  const ids = new Set(c.map((x) => x && x.id))
+  return [...c, ...local.filter((x) => x && x.id && !ids.has(x.id))]
+}
+
 function makeRecurringTx(rule, ym) {
   return {
     id: uuidv4(),
@@ -110,13 +118,17 @@ export function FinanceProvider({ children }) {
         if (cancelled) return
         if (snap.exists()) {
           const d = snap.data()
-          setTransactions(d.transactions || [])
-          setInstallments(d.installments || [])
-          setPeople(d.people || [])
-          setCustomCategories(d.customCategories || [])
-          setBudgets(d.budgets || {})
-          setRecurring(d.recurring || [])
-          setWallets(d.wallets?.length ? d.wallets : [DEFAULT_WALLET])
+          // Merge cloud with local so unsynced local items aren't lost
+          setTransactions((prev) => mergeById(d.transactions || [], prev))
+          setInstallments((prev) => mergeById(d.installments || [], prev))
+          setPeople((prev) => mergeById(d.people || [], prev))
+          setCustomCategories((prev) => mergeById(d.customCategories || [], prev))
+          setRecurring((prev) => mergeById(d.recurring || [], prev))
+          setBudgets((prev) => ({ ...prev, ...(d.budgets || {}) }))
+          setWallets((prev) => {
+            const m = mergeById(d.wallets || [], prev)
+            return m.length ? m : [DEFAULT_WALLET]
+          })
           if (d.cycleStartDay) setCycleStartDayState(d.cycleStartDay)
         } else {
           // first login on this account → seed cloud with whatever is local
@@ -143,7 +155,29 @@ export function FinanceProvider({ children }) {
       )
     }, 800)
     return () => clearTimeout(saveTimer.current)
-  }, [transactions, installments, people, customCategories, budgets, recurring, user, cloudReady, snapshotData])
+  }, [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, user, cloudReady, snapshotData])
+
+  // Flush to cloud immediately when the app is closed / backgrounded / reloaded
+  const snapRef = useRef(snapshotData)
+  useEffect(() => { snapRef.current = snapshotData }, [snapshotData])
+  useEffect(() => {
+    if (!firebaseEnabled) return
+    const flush = () => {
+      if (user && cloudReady) {
+        clearTimeout(saveTimer.current)
+        try {
+          setDoc(doc(db, 'users', user.uid), snapRef.current()).catch(() => {})
+        } catch { /* best effort */ }
+      }
+    }
+    const onVis = () => { if (document.visibilityState === 'hidden') flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [user, cloudReady])
 
   // On load: auto-post any recurring rule that is due this month and not yet posted.
   const recurringRan = useRef(false)
