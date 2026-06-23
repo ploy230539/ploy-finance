@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
 import { perHead } from '../utils/split'
 import { useAuth } from './AuthContext'
@@ -103,57 +103,88 @@ export function FinanceProvider({ children }) {
     [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay]
   )
 
-  // Load the user's cloud data on login (migrate local → cloud on first login)
+  // JSON of what's currently in sync with the cloud — used to ignore our own write echoes
+  const lastCloudJSON = useRef(null)
+
+  // Real-time cloud sync: live two-way updates across devices (same account)
   useEffect(() => {
     if (!firebaseEnabled || !user) {
       setCloudReady(false)
+      lastCloudJSON.current = null
       return
     }
-    let cancelled = false
     setCloudReady(false)
-    ;(async () => {
-      try {
-        const ref = doc(db, 'users', user.uid)
-        const snap = await getDoc(ref)
-        if (cancelled) return
-        if (snap.exists()) {
-          const d = snap.data()
-          // Merge cloud with local so unsynced local items aren't lost
-          setTransactions((prev) => mergeById(d.transactions || [], prev))
-          setInstallments((prev) => mergeById(d.installments || [], prev))
-          setPeople((prev) => mergeById(d.people || [], prev))
-          setCustomCategories((prev) => mergeById(d.customCategories || [], prev))
-          setRecurring((prev) => mergeById(d.recurring || [], prev))
-          setBudgets((prev) => ({ ...prev, ...(d.budgets || {}) }))
-          setWallets((prev) => {
-            const m = mergeById(d.wallets || [], prev)
-            return m.length ? m : [DEFAULT_WALLET]
-          })
-          if (d.cycleStartDay) setCycleStartDayState(d.cycleStartDay)
-        } else {
-          // first login on this account → seed cloud with whatever is local
-          await setDoc(ref, { transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay })
+    let first = true
+    const ref = doc(db, 'users', user.uid)
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) {
+          // first login on this account → seed cloud with local data
+          const data = snapshotData()
+          lastCloudJSON.current = JSON.stringify(data)
+          setDoc(ref, data).catch(() => {})
+          setCloudReady(true)
+          return
         }
-        if (!cancelled) setCloudReady(true)
-      } catch (e) {
-        console.error('โหลดข้อมูลคลาวด์ไม่สำเร็จ:', e)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
+        const d = snap.data()
+        const shaped = {
+          transactions: d.transactions || [],
+          installments: d.installments || [],
+          people: d.people || [],
+          customCategories: d.customCategories || [],
+          budgets: d.budgets || {},
+          recurring: d.recurring || [],
+          wallets: d.wallets?.length ? d.wallets : [DEFAULT_WALLET],
+          cycleStartDay: d.cycleStartDay || 1,
+        }
+        const json = JSON.stringify(shaped)
+        if (json === lastCloudJSON.current) {
+          setCloudReady(true)
+          return // our own write echoing back — ignore (prevents loop)
+        }
+        lastCloudJSON.current = json
+        if (first) {
+          first = false
+          // initial load: merge so locally-added (unsynced) items survive
+          setTransactions((prev) => mergeById(shaped.transactions, prev))
+          setInstallments((prev) => mergeById(shaped.installments, prev))
+          setPeople((prev) => mergeById(shaped.people, prev))
+          setCustomCategories((prev) => mergeById(shaped.customCategories, prev))
+          setRecurring((prev) => mergeById(shaped.recurring, prev))
+          setBudgets((prev) => ({ ...prev, ...shaped.budgets }))
+          setWallets((prev) => { const m = mergeById(shaped.wallets, prev); return m.length ? m : [DEFAULT_WALLET] })
+          setCycleStartDayState(shaped.cycleStartDay)
+        } else {
+          // live update from another device: take the remote state
+          setTransactions(shaped.transactions)
+          setInstallments(shaped.installments)
+          setPeople(shaped.people)
+          setCustomCategories(shaped.customCategories)
+          setRecurring(shaped.recurring)
+          setBudgets(shaped.budgets)
+          setWallets(shaped.wallets)
+          setCycleStartDayState(shaped.cycleStartDay)
+        }
+        setCloudReady(true)
+      },
+      (e) => console.error('cloud sync error:', e)
+    )
+    return () => unsub()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid])
 
-  // Save to cloud (debounced) whenever data changes after the cloud is ready
+  // Save to cloud (debounced) whenever local data changes — skip if it matches cloud
   useEffect(() => {
     if (!firebaseEnabled || !user || !cloudReady) return
+    const data = snapshotData()
+    const json = JSON.stringify(data)
+    if (json === lastCloudJSON.current) return // already in sync (incl. just-applied remote update)
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      setDoc(doc(db, 'users', user.uid), snapshotData()).catch((e) =>
-        console.error('บันทึกขึ้นคลาวด์ไม่สำเร็จ:', e)
-      )
-    }, 800)
+      lastCloudJSON.current = json
+      setDoc(doc(db, 'users', user.uid), data).catch((e) => console.error('บันทึกขึ้นคลาวด์ไม่สำเร็จ:', e))
+    }, 600)
     return () => clearTimeout(saveTimer.current)
   }, [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, user, cloudReady, snapshotData])
 
@@ -163,12 +194,13 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     if (!firebaseEnabled) return
     const flush = () => {
-      if (user && cloudReady) {
-        clearTimeout(saveTimer.current)
-        try {
-          setDoc(doc(db, 'users', user.uid), snapRef.current()).catch(() => {})
-        } catch { /* best effort */ }
-      }
+      if (!user || !cloudReady) return
+      const data = snapRef.current()
+      const json = JSON.stringify(data)
+      if (json === lastCloudJSON.current) return
+      clearTimeout(saveTimer.current)
+      lastCloudJSON.current = json
+      try { setDoc(doc(db, 'users', user.uid), data).catch(() => {}) } catch { /* best effort */ }
     }
     const onVis = () => { if (document.visibilityState === 'hidden') flush() }
     window.addEventListener('pagehide', flush)
