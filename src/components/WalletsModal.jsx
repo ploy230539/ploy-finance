@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
+import { todayISO } from '../utils/date'
 import Modal from './Modal'
 
 function formatMoney(n) {
@@ -40,7 +41,7 @@ export default function WalletsModal({ isOpen, onClose }) {
   function doTransfer() {
     const amount = parseFloat(transfer.amount)
     if (!transfer.from || !transfer.to || transfer.from === transfer.to || isNaN(amount) || amount <= 0) return
-    addTransfer({ fromWalletId: transfer.from, toWalletId: transfer.to, amount, date: new Date().toISOString().split('T')[0], note: transfer.note })
+    addTransfer({ fromWalletId: transfer.from, toWalletId: transfer.to, amount, date: todayISO(), note: transfer.note })
     setTransfer({ from: '', to: '', amount: '', note: '' })
     setView('list')
   }

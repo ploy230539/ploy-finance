@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
 import { perHead } from '../utils/split'
+import { todayISO } from '../utils/date'
 import { useAuth } from './AuthContext'
 import { db, firebaseEnabled } from '../firebase'
 
@@ -310,7 +311,7 @@ export function FinanceProvider({ children }) {
           category: 'split_repay',
           amount: perPerson,
           note: `รับเงินหารคืนจาก ${name}` + (tx.note ? ` · ${tx.note}` : ''),
-          date: new Date().toISOString().split('T')[0],
+          date: todayISO(),
           splitWith: [],
           createdAt: new Date().toISOString(),
           meta: { settlementOf: txId, person: name },

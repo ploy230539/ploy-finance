@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
 import { loanTypes, getLoanType } from '../data/categories'
+import { todayISO } from '../utils/date'
 import Modal from '../components/Modal'
 import { CheckIcon } from '../components/Icons'
 
@@ -16,7 +17,7 @@ const emptyForm = {
   totalMonths: '',
   monthlyAmount: '',
   interestRate: '',
-  startDate: new Date().toISOString().split('T')[0],
+  startDate: todayISO(),
   cardName: '',
 }
 
@@ -84,7 +85,7 @@ export default function Installments() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">{t('หนี้สิน & ผ่อนชำระ')}</h1>
         <button
-          onClick={() => { setForm(emptyForm); setShowModal(true) }}
+          onClick={() => { setForm({ ...emptyForm, startDate: todayISO() }); setShowModal(true) }}
           className="bg-gradient-to-br from-installment to-violet-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(124,58,237,0.3)] active:translate-y-px transition-transform"
         >
           {t('+ เพิ่มรายการ')}

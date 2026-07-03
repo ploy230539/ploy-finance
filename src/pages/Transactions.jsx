@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
 import { perHead } from '../utils/split'
+import { todayISO } from '../utils/date'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
 import PhotoCapture from '../components/PhotoCapture'
@@ -19,7 +20,7 @@ const emptyForm = {
   category: '',
   amount: '',
   note: '',
-  date: new Date().toISOString().split('T')[0],
+  date: todayISO(),
   splitWith: [],
   splitNewPerson: '',
   photo: null,
@@ -47,7 +48,7 @@ export default function Transactions() {
 
   function openAdd() {
     setEditingId(null)
-    setForm({ ...emptyForm, walletId: wallets[0]?.id || '' })
+    setForm({ ...emptyForm, date: todayISO(), walletId: wallets[0]?.id || '' })
     setShowModal(true)
   }
 

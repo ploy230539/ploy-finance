@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
 import { perHead } from '../utils/split'
+import { todayISO } from '../utils/date'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
 import PhotoCapture from '../components/PhotoCapture'
@@ -16,7 +17,7 @@ const emptyForm = {
   category: '',
   amount: '',
   note: '',
-  date: new Date().toISOString().split('T')[0],
+  date: todayISO(),
   splitWith: [],
   photo: null,
 }
@@ -106,7 +107,7 @@ export default function SplitBill() {
             {t('รายชื่อ')}
           </button>
           <button
-            onClick={() => { setForm(emptyForm); setBuyMode('split'); setShowModal(true) }}
+            onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setBuyMode('split'); setShowModal(true) }}
             className="bg-gradient-to-br from-split to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px transition-transform"
           >
             {t('+ สร้างบิล')}
