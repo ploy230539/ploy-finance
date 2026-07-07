@@ -345,20 +345,50 @@ export function FinanceProvider({ children }) {
     ])
   }, [])
 
+  // Toggle an installment payment. Marking paid → auto-records an expense in the ledger; un-marking removes it.
+  const installmentsRef = useRef(installments)
+  useEffect(() => { installmentsRef.current = installments }, [installments])
   const toggleInstallmentPayment = useCallback((installmentId, monthIndex) => {
-    setInstallments((prev) =>
-      prev.map((inst) => {
-        if (inst.id !== installmentId) return inst
-        const payments = inst.payments.map((p, i) =>
-          i === monthIndex ? { ...p, paid: !p.paid } : p
+    const inst = installmentsRef.current.find((i) => i.id === installmentId)
+    if (!inst) return
+    const payment = inst.payments[monthIndex]
+    if (!payment) return
+
+    const setPaid = (paid, txId) =>
+      setInstallments((prev) =>
+        prev.map((i) =>
+          i.id === installmentId
+            ? { ...i, payments: i.payments.map((p, idx) => (idx === monthIndex ? { ...p, paid, txId } : p)) }
+            : i
         )
-        return { ...inst, payments }
-      })
-    )
+      )
+
+    if (!payment.paid) {
+      // mark paid → create an expense transaction
+      const expenseTx = {
+        id: uuidv4(),
+        type: 'expense',
+        category: inst.loanType === 'credit' ? 'credit_card' : 'loan',
+        amount: inst.monthlyAmount,
+        note: `${inst.name} · งวด ${payment.month}`,
+        date: todayISO(),
+        splitWith: [],
+        createdAt: new Date().toISOString(),
+        meta: { installmentId, monthIndex },
+      }
+      setTransactions((prev) => [expenseTx, ...prev])
+      setPaid(true, expenseTx.id)
+    } else {
+      // un-mark → remove the linked expense transaction
+      if (payment.txId) setTransactions((prev) => prev.filter((t) => t.id !== payment.txId))
+      setPaid(false, null)
+    }
   }, [])
 
   const deleteInstallment = useCallback((id) => {
     setInstallments((prev) => prev.filter((i) => i.id !== id))
+    // remove any auto-created payment transactions tied to this installment
+    setTransactions((prev) => prev.filter((t) => t.meta?.installmentId !== id))
   }, [])
 
   const addPerson = useCallback((name) => {
