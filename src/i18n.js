@@ -273,6 +273,22 @@ export const EN = {
   'ขนม/ของกิน': 'Snacks',
   'ที่จอดรถ': 'Parking',
   'ทางด่วน': 'Tollway',
+  'ศัลยกรรม/คลินิกความงาม': 'Cosmetic clinic',
+  'ทำเล็บ': 'Nails',
+  'สปา/นวด': 'Spa/Massage',
+  'ทันตกรรม': 'Dental',
+  'ตรวจสุขภาพ': 'Health check',
+  'เครื่องสำอาง': 'Cosmetics',
+  'หวย/ลอตเตอรี่': 'Lottery',
+  'ค่าปรับ': 'Fines',
+  'บุหรี่/ยาสูบ': 'Tobacco',
+  'ล้างรถ': 'Car wash',
+  'ค่าส่งพัสดุ': 'Shipping',
+  'ค่าธรรมเนียม/ATM': 'Fees/ATM',
+  'งานแต่ง/งานบุญ': 'Events/Weddings',
+  'ต้นไม้/สวน': 'Plants/Garden',
+  'ของเล่น': 'Toys',
+  'อุปกรณ์กีฬา': 'Sports gear',
   'อื่นๆ': 'Other',
   // Categories — income
   'เงินเดือน': 'Salary',
@@ -284,6 +300,9 @@ export const EN = {
   'เงินคืน': 'Refund',
   'ได้รับของขวัญ/เงิน': 'Gift received',
   'รับเงินหารคืน': 'Split repayment',
+  'ค่าเช่า(รับ)': 'Rental income',
+  'คืนภาษี': 'Tax refund',
+  'ค่าคอมมิชชั่น': 'Commission',
 }
 
 export function translate(lang, thai) {

@@ -40,6 +40,22 @@ export const expenseCategories = [
   { id: 'snack', name: 'ขนม/ของกิน', icon: '🍿', color: '#f97316' },
   { id: 'parking', name: 'ที่จอดรถ', icon: '🅿️', color: '#2563eb' },
   { id: 'toll', name: 'ทางด่วน', icon: '🛣️', color: '#4b5563' },
+  { id: 'cosmetic', name: 'ศัลยกรรม/คลินิกความงาม', icon: '💉', color: '#f472b6' },
+  { id: 'nails', name: 'ทำเล็บ', icon: '💅', color: '#fb7185' },
+  { id: 'spa', name: 'สปา/นวด', icon: '💆', color: '#c084fc' },
+  { id: 'dental', name: 'ทันตกรรม', icon: '🦷', color: '#38bdf8' },
+  { id: 'checkup', name: 'ตรวจสุขภาพ', icon: '🩺', color: '#2dd4bf' },
+  { id: 'cosmetics', name: 'เครื่องสำอาง', icon: '💋', color: '#e11d48' },
+  { id: 'lottery', name: 'หวย/ลอตเตอรี่', icon: '🎫', color: '#f59e0b' },
+  { id: 'fine', name: 'ค่าปรับ', icon: '⚠️', color: '#ef4444' },
+  { id: 'cigarette', name: 'บุหรี่/ยาสูบ', icon: '🚬', color: '#78716c' },
+  { id: 'carwash', name: 'ล้างรถ', icon: '🧽', color: '#0ea5e9' },
+  { id: 'shipping', name: 'ค่าส่งพัสดุ', icon: '📮', color: '#ea580c' },
+  { id: 'bankfee', name: 'ค่าธรรมเนียม/ATM', icon: '🏧', color: '#64748b' },
+  { id: 'event', name: 'งานแต่ง/งานบุญ', icon: '💒', color: '#db2777' },
+  { id: 'garden', name: 'ต้นไม้/สวน', icon: '🪴', color: '#16a34a' },
+  { id: 'toys', name: 'ของเล่น', icon: '🧸', color: '#f97316' },
+  { id: 'sport', name: 'อุปกรณ์กีฬา', icon: '⚽', color: '#22c55e' },
   { id: 'other_expense', name: 'อื่นๆ', icon: '📝', color: '#6b7280' },
 ]
 
@@ -53,6 +69,9 @@ export const incomeCategories = [
   { id: 'refund', name: 'เงินคืน', icon: '💸', color: '#10b981' },
   { id: 'gift_income', name: 'ได้รับของขวัญ/เงิน', icon: '🎁', color: '#ec4899' },
   { id: 'split_repay', name: 'รับเงินหารคืน', icon: '🤝', color: '#059669' },
+  { id: 'rental', name: 'ค่าเช่า(รับ)', icon: '🏘️', color: '#0891b2' },
+  { id: 'tax_refund', name: 'คืนภาษี', icon: '🧾', color: '#16a34a' },
+  { id: 'commission', name: 'ค่าคอมมิชชั่น', icon: '💼', color: '#f59e0b' },
   { id: 'other_income', name: 'อื่นๆ', icon: '📝', color: '#6b7280' },
 ]
 
