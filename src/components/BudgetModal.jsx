@@ -8,7 +8,8 @@ export default function BudgetModal({ isOpen, onClose }) {
   const { t } = useLang()
   const [search, setSearch] = useState('')
 
-  const filtered = expenseCats.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+  const q = search.trim().toLowerCase()
+  const filtered = q ? expenseCats.filter((c) => `${c.name} ${t(c.name)}`.toLowerCase().includes(q)) : expenseCats
   // budgeted categories first
   const sorted = [...filtered].sort((a, b) => (budgets[b.id] ? 1 : 0) - (budgets[a.id] ? 1 : 0))
 

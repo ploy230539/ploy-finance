@@ -295,7 +295,7 @@ export const EN = {
   'ขนม/ของกิน': 'Snacks',
   'ที่จอดรถ': 'Parking',
   'ทางด่วน': 'Tollway',
-  'ศัลยกรรม/คลินิกความงาม': 'Cosmetic clinic',
+  'ศัลยกรรม/คลินิกความงาม': 'Cosmetic surgery / clinic',
   'ทำเล็บ': 'Nails',
   'สปา/นวด': 'Spa/Massage',
   'ทันตกรรม': 'Dental',

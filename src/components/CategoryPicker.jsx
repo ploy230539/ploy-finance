@@ -19,7 +19,11 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
   const [creating, setCreating] = useState(false)
   const [draft, setDraft] = useState({ name: '', icon: '🍜', color: '#D97706' })
 
-  const filtered = categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+  // match the Thai name and the translated one, so search works in both languages
+  const q = search.trim().toLowerCase()
+  const filtered = q
+    ? categories.filter((c) => `${c.name} ${t(c.name)}`.toLowerCase().includes(q))
+    : categories
 
   function saveNew() {
     const name = draft.name.trim()

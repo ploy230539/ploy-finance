@@ -1,13 +1,11 @@
 import { useEffect } from 'react'
+import { lockScroll } from '../utils/scrollLock'
 
 // Full-screen lightbox for viewing a receipt/slip image.
 export default function ReceiptViewer({ src, onClose }) {
   useEffect(() => {
     if (!src) return
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return lockScroll()
   }, [src])
 
   if (!src) return null

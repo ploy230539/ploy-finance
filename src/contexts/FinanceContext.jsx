@@ -4,6 +4,7 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
 import { perHead } from '../utils/split'
 import { todayISO } from '../utils/date'
+import { registerFlush } from '../utils/flushBus'
 import { useAuth } from './AuthContext'
 import { db, firebaseEnabled } from '../firebase'
 
@@ -234,14 +235,17 @@ export function FinanceProvider({ children }) {
       if (json === lastCloudJSON.current) return
       clearTimeout(saveTimer.current)
       lastCloudJSON.current = json
-      try { setDoc(doc(db, 'users', user.uid), data).catch(() => {}) } catch { /* best effort */ }
+      try { return setDoc(doc(db, 'users', user.uid), data).catch(() => {}) } catch { /* best effort */ }
     }
     const onVis = () => { if (document.visibilityState === 'hidden') flush() }
     window.addEventListener('pagehide', flush)
     document.addEventListener('visibilitychange', onVis)
+    // Sign-out clears the local cache — let it push anything unsynced first
+    const unregister = registerFlush(flush)
     return () => {
       window.removeEventListener('pagehide', flush)
       document.removeEventListener('visibilitychange', onVis)
+      unregister()
     }
   }, [user, cloudReady])
 
@@ -368,15 +372,20 @@ export function FinanceProvider({ children }) {
 
   const addInstallment = useCallback((inst) => {
     const id = uuidv4()
-    const payments = Array.from({ length: inst.totalMonths }, (_, i) => ({
-      month: i + 1,
-      paid: false,
-      dueDate: new Date(
-        new Date(inst.startDate).getFullYear(),
-        new Date(inst.startDate).getMonth() + i,
-        new Date(inst.startDate).getDate()
-      ).toISOString(),
-    }))
+    const start = new Date(inst.startDate)
+    const y = start.getFullYear()
+    const m = start.getMonth()
+    const day = start.getDate()
+    const payments = Array.from({ length: inst.totalMonths }, (_, i) => {
+      // Clamp to the month's length — new Date(y, m, 31) would roll into the
+      // next month, so a loan starting on the 31st used to skip months.
+      const lastDay = new Date(y, m + i + 1, 0).getDate()
+      return {
+        month: i + 1,
+        paid: false,
+        dueDate: new Date(y, m + i, Math.min(day, lastDay), 12).toISOString(),
+      }
+    })
     setInstallments((prev) => [
       { ...inst, id, payments, createdAt: new Date().toISOString() },
       ...prev,
@@ -455,6 +464,13 @@ export function FinanceProvider({ children }) {
 
   const deleteCustomCategory = useCallback((id) => {
     setCustomCategories((prev) => prev.filter((c) => c.id !== id))
+    // drop its budget too, otherwise an unnamed row lingers on the dashboard
+    setBudgets((prev) => {
+      if (!(id in prev)) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
     tombstone(id)
   }, [tombstone])
 
@@ -488,6 +504,19 @@ export function FinanceProvider({ children }) {
       return next
     })
   }, [])
+
+  // What the UI reads: newest first. The raw array's order is insertion order,
+  // and merging cloud + local data appends rescued items at the end, so lists
+  // must not rely on it.
+  const sortedTransactions = useMemo(
+    () =>
+      [...transactions].sort(
+        (a, b) =>
+          (b.date || '').localeCompare(a.date || '') ||
+          (b.createdAt || '').localeCompare(a.createdAt || '')
+      ),
+    [transactions]
+  )
 
   const expenseCats = useMemo(
     () => [...expenseCategories, ...customCategories.filter((c) => c.type === 'expense')],
@@ -624,7 +653,7 @@ export function FinanceProvider({ children }) {
   return (
     <FinanceContext.Provider
       value={{
-        transactions,
+        transactions: sortedTransactions,
         addTransaction,
         updateTransaction,
         deleteTransaction,

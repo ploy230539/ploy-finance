@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from 'firebase/auth'
 import { auth, googleProvider, firebaseEnabled } from '../firebase'
+import { flushNow } from '../utils/flushBus'
 
 const AuthContext = createContext()
 
@@ -27,11 +28,18 @@ export function AuthProvider({ children }) {
   }
 
   const signOut = async () => {
+    // Push anything still unsynced — the local cache is about to be wiped
+    await flushNow()
     await fbSignOut(auth)
-    // clear local cache so the next account doesn't briefly see this account's data
-    ;['ploy_transactions', 'ploy_installments', 'ploy_people', 'ploy_custom_categories', 'ploy_budgets', 'ploy_recurring'].forEach(
-      (k) => localStorage.removeItem(k)
-    )
+    // Clear every data key so the next account starts clean.
+    // (ploy_wallets / ploy_cycle_day / ploy_deleted used to be left behind,
+    // which leaked one account's wallets into the next one.)
+    ;[
+      'ploy_transactions', 'ploy_installments', 'ploy_people', 'ploy_custom_categories',
+      'ploy_budgets', 'ploy_recurring', 'ploy_wallets', 'ploy_cycle_day', 'ploy_deleted',
+    ].forEach((k) => localStorage.removeItem(k))
+    // Reload so no still-mounted component can write the old state back
+    window.location.reload()
   }
 
   return (

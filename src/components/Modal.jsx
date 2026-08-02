@@ -1,11 +1,10 @@
 import { useEffect } from 'react'
+import { lockScroll } from '../utils/scrollLock'
 
 export default function Modal({ isOpen, onClose, title, children }) {
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return
+    return lockScroll()
   }, [isOpen])
 
   if (!isOpen) return null
