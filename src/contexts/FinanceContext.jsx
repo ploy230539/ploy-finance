@@ -614,23 +614,28 @@ export function FinanceProvider({ children }) {
   }, [people, customCategories, recurring, wallets])
 
   // Per-wallet balance: initialBalance + income − expense ± transfers.
-  // Transactions without a walletId fall back to the first (default) wallet.
+  // A transaction with no walletId — or one pointing at a wallet that has since
+  // been deleted — falls back to the default wallet, so its money is never
+  // dropped from the totals.
   const walletBalances = useMemo(() => {
     const defId = wallets[0]?.id
     const bal = {}
     wallets.forEach((w) => {
       bal[w.id] = Number(w.initialBalance) || 0
     })
+    const resolve = (id) => (id != null && id in bal ? id : defId)
     transactions.forEach((t) => {
       if (t.type === 'transfer') {
-        if (t.fromWalletId != null) bal[t.fromWalletId] = (bal[t.fromWalletId] || 0) - t.amount
-        if (t.toWalletId != null) bal[t.toWalletId] = (bal[t.toWalletId] || 0) + t.amount
+        const from = resolve(t.fromWalletId)
+        const to = resolve(t.toWalletId)
+        if (from != null) bal[from] -= t.amount
+        if (to != null) bal[to] += t.amount
         return
       }
-      const wid = t.walletId || defId
+      const wid = resolve(t.walletId)
       if (wid == null) return
-      if (t.type === 'income') bal[wid] = (bal[wid] || 0) + t.amount
-      else if (t.type === 'expense') bal[wid] = (bal[wid] || 0) - t.amount
+      if (t.type === 'income') bal[wid] += t.amount
+      else if (t.type === 'expense') bal[wid] -= t.amount
     })
     return bal
   }, [wallets, transactions])
@@ -643,7 +648,13 @@ export function FinanceProvider({ children }) {
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0)
 
-  const balance = totalIncome - totalExpense
+  // Money actually on hand = every wallet's balance, so "คงเหลือสะสม" can never
+  // disagree with "รวมทุกกระเป๋า". (It used to be income − expense only, which
+  // ignored the wallets' starting balances.)
+  const balance = useMemo(
+    () => wallets.reduce((s, w) => s + (walletBalances[w.id] || 0), 0),
+    [wallets, walletBalances]
+  )
 
   const monthlyInstallmentTotal = installments.reduce((sum, inst) => {
     const unpaid = inst.payments.filter((p) => !p.paid).length

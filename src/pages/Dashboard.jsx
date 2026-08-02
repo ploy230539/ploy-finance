@@ -48,7 +48,8 @@ export default function Dashboard() {
   const [anchor, setAnchor] = useState(new Date())
   const [showBudget, setShowBudget] = useState(false)
   const [showWallets, setShowWallets] = useState(false)
-  const walletsTotal = wallets.reduce((s, w) => s + (walletBalances[w.id] || 0), 0)
+  // same figure as the "คงเหลือสะสม" card — one source of truth
+  const walletsTotal = balance
 
   const useCycle = mode === 'month' && cycleStartDay > 1
   const cyc = useMemo(() => (useCycle ? cycleRange(anchor, cycleStartDay) : null), [useCycle, anchor, cycleStartDay])
