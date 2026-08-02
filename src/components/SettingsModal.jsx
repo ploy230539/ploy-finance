@@ -6,14 +6,18 @@ import { useTheme } from '../contexts/ThemeContext'
 import Modal from './Modal'
 import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
 
+const CONFIRM_WORD = 'ล้าง'
+const CONFIRM_WORD_EN = 'CLEAR'
+
 export default function SettingsModal({ isOpen, onClose }) {
-  const { exportData, importData, getCategory, transactions, cycleStartDay, setCycleStartDay, removeAllPhotos, removePhotosBefore } = useFinance()
+  const { exportData, importData, clearData, getCategory, transactions, installments, cycleStartDay, setCycleStartDay, removeAllPhotos, removePhotosBefore } = useFinance()
   const { user, signOut, enabled } = useAuth()
   const { t, lang } = useLang()
   const { theme, setTheme, themes } = useTheme()
   const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
   const [beforeDate, setBeforeDate] = useState('')
+  const [backedUp, setBackedUp] = useState(false)
 
   const photoTxs = transactions.filter((tx) => tx.photo)
   const photoBytes = photoTxs.reduce((s, tx) => s + (tx.photo?.length || 0), 0)
@@ -42,7 +46,33 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   function handleBackup() {
     downloadBackup(exportData())
+    setBackedUp(true)
     flash(t('ดาวน์โหลดไฟล์สำรองแล้ว — เก็บไว้ที่ปลอดภัยนะ'))
+  }
+
+  // Wipe data — always back up first, then require typing the confirm word.
+  function handleClear(scope) {
+    if (transactions.length === 0 && scope !== 'all') return flash(t('ยังไม่มีรายการให้ล้าง'), false)
+
+    if (!backedUp) {
+      if (!confirm(`${t('ยังไม่ได้สำรองข้อมูลในครั้งนี้')}\n\n${t('กด OK เพื่อดาวน์โหลดไฟล์สำรองก่อน แล้วค่อยกดล้างอีกครั้ง')}`)) return
+      handleBackup()
+      return
+    }
+
+    const what =
+      scope === 'all'
+        ? `${t('ล้างทั้งหมด')}: ${transactions.length} ${t('รายการ')} + ${installments.length} ${t('รายการผ่อน')} + ${t('กระเป๋าเงิน/หมวดหมู่เอง/งบ/รายการประจำ')}`
+        : `${t('ล้างรายการ')}: ${transactions.length} ${t('รายการ')} + ${t('รูปสลิป')} (${t('เก็บกระเป๋าเงิน ยอดผ่อน หมวดหมู่เอง งบ ไว้')})`
+
+    const word = lang === 'en' ? CONFIRM_WORD_EN : CONFIRM_WORD
+    const answer = prompt(`⚠️ ${what}\n\n${t('ลบแล้วกู้คืนไม่ได้ (นอกจากไฟล์สำรอง) — พิมพ์')} "${word}" ${t('เพื่อยืนยัน')}`)
+    const typed = answer?.trim().toUpperCase()
+    if (typed !== CONFIRM_WORD && typed !== CONFIRM_WORD_EN) return flash(t('ยกเลิกการล้างข้อมูล'), false)
+
+    clearData(scope)
+    setBackedUp(false)
+    flash(t('ล้างข้อมูลแล้ว — เริ่มเดือนใหม่ได้เลย') + ' ✨')
   }
 
   function handleCsv() {
@@ -191,6 +221,32 @@ export default function SettingsModal({ isOpen, onClose }) {
             className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-dashed border-primary-300 text-primary-700 active:translate-y-px"
           >
             {t('⬆️ เลือกไฟล์สำรองเพื่อกู้คืน')}
+          </button>
+        </section>
+
+        <section className="border-t-2 border-expense/20 pt-5">
+          <h3 className="text-sm font-semibold text-expense mb-1">{t('🧹 ล้างข้อมูล (เริ่มเดือนใหม่)')}</h3>
+          <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+            {t('ต้องสำรองข้อมูลก่อนถึงจะล้างได้ และต้องพิมพ์ยืนยัน — ถ้าเข้าระบบอยู่ ข้อมูลจะถูกล้างในทุกเครื่องด้วย')}
+          </p>
+          <div
+            className={`text-xs rounded-lg px-3 py-2 mb-3 ${
+              backedUp ? 'bg-income-light text-income' : 'bg-slate-100 text-slate-500'
+            }`}
+          >
+            {backedUp ? `✓ ${t('สำรองข้อมูลแล้วในครั้งนี้')}` : `① ${t('กด "⬇️ สำรอง (JSON)" ด้านบนก่อน')}`}
+          </div>
+          <button
+            onClick={() => handleClear('transactions')}
+            className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-expense/30 text-expense active:translate-y-px mb-2"
+          >
+            {t('ล้างเฉพาะรายการ + รูปสลิป')}
+          </button>
+          <button
+            onClick={() => handleClear('all')}
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-expense active:translate-y-px"
+          >
+            {t('ล้างข้อมูลทั้งหมด')}
           </button>
         </section>
       </div>

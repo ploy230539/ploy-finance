@@ -14,12 +14,36 @@ function ymNow() {
 
 const DEFAULT_WALLET = { id: 'w_cash', name: 'เงินสด', type: 'cash', icon: '💵', color: '#059669', initialBalance: 0 }
 
-// Union two arrays by id — keeps cloud items + any local items not yet synced (prevents data loss)
-function mergeById(cloud, local) {
-  const c = Array.isArray(cloud) ? cloud : []
-  if (!Array.isArray(local) || local.length === 0) return c
-  const ids = new Set(c.map((x) => x && x.id))
-  return [...c, ...local.filter((x) => x && x.id && !ids.has(x.id))]
+// Union two arrays by id — cloud wins on conflicts, local-only items survive,
+// anything deleted (tombstoned) on either side is dropped. Never blindly overwrite:
+// that is what used to wipe entries that hadn't reached the cloud yet.
+function mergeById(cloud, local, dead) {
+  const c = (Array.isArray(cloud) ? cloud : []).filter((x) => x && x.id && !dead.has(x.id))
+  const l = (Array.isArray(local) ? local : []).filter((x) => x && x.id && !dead.has(x.id))
+  if (l.length === 0) return c
+  const ids = new Set(c.map((x) => x.id))
+  return [...c, ...l.filter((x) => !ids.has(x.id))]
+}
+
+// --- Tombstones: remember what was deleted so a merge can't resurrect it ---
+const TOMB_MAX = 2000
+const TOMB_DAYS = 180
+
+function pruneTombs(list) {
+  const cutoff = Date.now() - TOMB_DAYS * 86400000
+  const seen = new Set()
+  const out = []
+  for (const d of list) {
+    if (!d || !d.id || seen.has(d.id)) continue
+    if (d.at && d.at < cutoff) continue
+    seen.add(d.id)
+    out.push(d)
+  }
+  return out.slice(-TOMB_MAX)
+}
+
+function mergeTombs(a, b) {
+  return pruneTombs([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])])
 }
 
 function makeRecurringTx(rule, ym) {
@@ -79,6 +103,18 @@ export function FinanceProvider({ children }) {
     const w = loadFromStorage('ploy_wallets', null)
     return w && w.length ? w : [DEFAULT_WALLET]
   })
+  const [deletedIds, setDeletedIds] = useState(() => loadFromStorage('ploy_deleted', []))
+
+  // Current tombstones, readable synchronously (cloud snapshots need them immediately)
+  const deadRef = useRef(deletedIds)
+  useEffect(() => { deadRef.current = deletedIds }, [deletedIds])
+
+  const tombstone = useCallback((ids) => {
+    const list = (Array.isArray(ids) ? ids : [ids]).filter(Boolean)
+    if (list.length === 0) return
+    const at = Date.now()
+    setDeletedIds((prev) => pruneTombs([...prev, ...list.map((id) => ({ id, at }))]))
+  }, [])
 
   useEffect(() => saveToStorage('ploy_transactions', transactions), [transactions])
   useEffect(() => saveToStorage('ploy_installments', installments), [installments])
@@ -88,6 +124,7 @@ export function FinanceProvider({ children }) {
   useEffect(() => saveToStorage('ploy_recurring', recurring), [recurring])
   useEffect(() => saveToStorage('ploy_wallets', wallets), [wallets])
   useEffect(() => saveToStorage('ploy_cycle_day', cycleStartDay), [cycleStartDay])
+  useEffect(() => saveToStorage('ploy_deleted', deletedIds), [deletedIds])
 
   const setCycleStartDay = useCallback((d) => {
     const n = parseInt(d)
@@ -100,8 +137,8 @@ export function FinanceProvider({ children }) {
   const saveTimer = useRef(null)
 
   const snapshotData = useCallback(
-    () => ({ transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay }),
-    [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay]
+    () => ({ transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, deletedIds }),
+    [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, deletedIds]
   )
 
   // JSON of what's currently in sync with the cloud — used to ignore our own write echoes
@@ -115,7 +152,6 @@ export function FinanceProvider({ children }) {
       return
     }
     setCloudReady(false)
-    let first = true
     const ref = doc(db, 'users', user.uid)
     const unsub = onSnapshot(
       ref,
@@ -138,6 +174,7 @@ export function FinanceProvider({ children }) {
           recurring: d.recurring || [],
           wallets: d.wallets?.length ? d.wallets : [DEFAULT_WALLET],
           cycleStartDay: d.cycleStartDay || 1,
+          deletedIds: d.deletedIds || [],
         }
         const json = JSON.stringify(shaped)
         if (json === lastCloudJSON.current) {
@@ -145,28 +182,24 @@ export function FinanceProvider({ children }) {
           return // our own write echoing back — ignore (prevents loop)
         }
         lastCloudJSON.current = json
-        if (first) {
-          first = false
-          // initial load: merge so locally-added (unsynced) items survive
-          setTransactions((prev) => mergeById(shaped.transactions, prev))
-          setInstallments((prev) => mergeById(shaped.installments, prev))
-          setPeople((prev) => mergeById(shaped.people, prev))
-          setCustomCategories((prev) => mergeById(shaped.customCategories, prev))
-          setRecurring((prev) => mergeById(shaped.recurring, prev))
-          setBudgets((prev) => ({ ...prev, ...shaped.budgets }))
-          setWallets((prev) => { const m = mergeById(shaped.wallets, prev); return m.length ? m : [DEFAULT_WALLET] })
-          setCycleStartDayState(shaped.cycleStartDay)
-        } else {
-          // live update from another device: take the remote state
-          setTransactions(shaped.transactions)
-          setInstallments(shaped.installments)
-          setPeople(shaped.people)
-          setCustomCategories(shaped.customCategories)
-          setRecurring(shaped.recurring)
-          setBudgets(shaped.budgets)
-          setWallets(shaped.wallets)
-          setCycleStartDayState(shaped.cycleStartDay)
-        }
+
+        // Deletions from both sides, applied to both sides of the merge
+        const tombs = mergeTombs(shaped.deletedIds, deadRef.current)
+        const dead = new Set(tombs.map((x) => x.id))
+        deadRef.current = tombs
+        setDeletedIds(tombs)
+
+        // ALWAYS merge — a snapshot must never delete something we haven't uploaded yet.
+        // (Firestore delivers cache first then server; the old replace-on-2nd-snapshot
+        // path wiped entries that were still waiting to sync.)
+        setTransactions((prev) => mergeById(shaped.transactions, prev, dead))
+        setInstallments((prev) => mergeById(shaped.installments, prev, dead))
+        setPeople((prev) => mergeById(shaped.people, prev, dead))
+        setCustomCategories((prev) => mergeById(shaped.customCategories, prev, dead))
+        setRecurring((prev) => mergeById(shaped.recurring, prev, dead))
+        setBudgets((prev) => ({ ...prev, ...shaped.budgets }))
+        setWallets((prev) => { const m = mergeById(shaped.wallets, prev, dead); return m.length ? m : [DEFAULT_WALLET] })
+        setCycleStartDayState(shaped.cycleStartDay)
         setCloudReady(true)
       },
       (e) => console.error('cloud sync error:', e)
@@ -187,7 +220,7 @@ export function FinanceProvider({ children }) {
       setDoc(doc(db, 'users', user.uid), data).catch((e) => console.error('บันทึกขึ้นคลาวด์ไม่สำเร็จ:', e))
     }, 600)
     return () => clearTimeout(saveTimer.current)
-  }, [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, user, cloudReady, snapshotData])
+  }, [transactions, installments, people, customCategories, budgets, recurring, wallets, cycleStartDay, deletedIds, user, cloudReady, snapshotData])
 
   // Flush to cloud immediately when the app is closed / backgrounded / reloaded
   const snapRef = useRef(snapshotData)
@@ -213,9 +246,12 @@ export function FinanceProvider({ children }) {
   }, [user, cloudReady])
 
   // On load: auto-post any recurring rule that is due this month and not yet posted.
+  // Waits for the cloud data to arrive first, otherwise it would re-post rules that
+  // another device already posted (duplicates).
   const recurringRan = useRef(false)
+  const waitForCloud = firebaseEnabled && !!user && !cloudReady
   useEffect(() => {
-    if (recurringRan.current) return
+    if (recurringRan.current || waitForCloud) return
     recurringRan.current = true
     const ym = ymNow()
     const dom = new Date().getDate()
@@ -230,22 +266,23 @@ export function FinanceProvider({ children }) {
     setTransactions((prev) => [...due.map((r) => makeRecurringTx(r, ym)), ...prev])
     setRecurring((prev) => prev.map((r) => (dueIds.has(r.id) ? { ...r, lastPosted: ym } : r)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [waitForCloud])
 
   const addTransaction = useCallback((tx) => {
     setTransactions((prev) => [{ ...tx, id: uuidv4(), createdAt: new Date().toISOString() }, ...prev])
   }, [])
 
+  // Current transactions, readable synchronously (so deletes can be tombstoned exactly)
+  const txRef = useRef(transactions)
+  useEffect(() => { txRef.current = transactions }, [transactions])
+
   const deleteTransaction = useCallback((id) => {
-    setTransactions((prev) =>
-      prev.filter((t) => {
-        if (t.id === id) return false
-        // also remove any auto-created settlement income tied to this split
-        if (t.meta?.settlementOf === id) return false
-        return true
-      })
-    )
-  }, [])
+    // also remove any auto-created settlement income tied to this split
+    const gone = [id, ...txRef.current.filter((t) => t.meta?.settlementOf === id).map((t) => t.id)]
+    const dead = new Set(gone)
+    setTransactions((prev) => prev.filter((t) => !dead.has(t.id)))
+    tombstone(gone)
+  }, [tombstone])
 
   const updateTransaction = useCallback((id, patch) => {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
@@ -273,8 +310,10 @@ export function FinanceProvider({ children }) {
 
   const deleteWallet = useCallback((id) => {
     // keep at least one wallet; transactions of a deleted wallet fall back to the default
-    setWallets((prev) => (prev.length <= 1 ? prev : prev.filter((w) => w.id !== id)))
-  }, [])
+    if (wallets.length <= 1) return
+    setWallets((prev) => prev.filter((w) => w.id !== id))
+    tombstone(id)
+  }, [wallets.length, tombstone])
 
   // Transfer money between two wallets (not counted as income/expense)
   const addTransfer = useCallback(({ fromWalletId, toWalletId, amount, date, note }) => {
@@ -297,36 +336,35 @@ export function FinanceProvider({ children }) {
   // Toggle "received money back" for one person on a split bill.
   // When marked received → auto-create an income transaction; when un-marked → remove it.
   const settleSplitPerson = useCallback((txId, name) => {
-    setTransactions((prev) => {
-      const tx = prev.find((t) => t.id === txId)
-      if (!tx) return prev
-      const perPerson = perHead(tx)
-      const settlements = { ...(tx.settlements || {}) }
-      const cur = settlements[name] || { received: false, incomeTxId: null }
+    const tx = txRef.current.find((t) => t.id === txId)
+    if (!tx) return
+    const settlements = { ...(tx.settlements || {}) }
+    const cur = settlements[name] || { received: false, incomeTxId: null }
 
-      if (!cur.received) {
-        const incomeTx = {
-          id: uuidv4(),
-          type: 'income',
-          category: 'split_repay',
-          amount: perPerson,
-          note: `รับเงินหารคืนจาก ${name}` + (tx.note ? ` · ${tx.note}` : ''),
-          date: todayISO(),
-          splitWith: [],
-          createdAt: new Date().toISOString(),
-          meta: { settlementOf: txId, person: name },
-        }
-        settlements[name] = { received: true, incomeTxId: incomeTx.id }
-        return [incomeTx, ...prev.map((t) => (t.id === txId ? { ...t, settlements } : t))]
+    if (!cur.received) {
+      const incomeTx = {
+        id: uuidv4(),
+        type: 'income',
+        category: 'split_repay',
+        amount: perHead(tx),
+        note: `รับเงินหารคืนจาก ${name}` + (tx.note ? ` · ${tx.note}` : ''),
+        date: todayISO(),
+        splitWith: [],
+        createdAt: new Date().toISOString(),
+        meta: { settlementOf: txId, person: name },
       }
+      settlements[name] = { received: true, incomeTxId: incomeTx.id }
+      setTransactions((prev) => [incomeTx, ...prev.map((t) => (t.id === txId ? { ...t, settlements } : t))])
+      return
+    }
 
-      const removeId = cur.incomeTxId
-      settlements[name] = { received: false, incomeTxId: null }
-      return prev
-        .filter((t) => t.id !== removeId)
-        .map((t) => (t.id === txId ? { ...t, settlements } : t))
-    })
-  }, [])
+    const removeId = cur.incomeTxId
+    settlements[name] = { received: false, incomeTxId: null }
+    setTransactions((prev) =>
+      prev.filter((t) => t.id !== removeId).map((t) => (t.id === txId ? { ...t, settlements } : t))
+    )
+    if (removeId) tombstone(removeId)
+  }, [tombstone])
 
   const addInstallment = useCallback((inst) => {
     const id = uuidv4()
@@ -380,16 +418,21 @@ export function FinanceProvider({ children }) {
       setPaid(true, expenseTx.id)
     } else {
       // un-mark → remove the linked expense transaction
-      if (payment.txId) setTransactions((prev) => prev.filter((t) => t.id !== payment.txId))
+      if (payment.txId) {
+        setTransactions((prev) => prev.filter((t) => t.id !== payment.txId))
+        tombstone(payment.txId)
+      }
       setPaid(false, null)
     }
-  }, [])
+  }, [tombstone])
 
   const deleteInstallment = useCallback((id) => {
     setInstallments((prev) => prev.filter((i) => i.id !== id))
     // remove any auto-created payment transactions tied to this installment
+    const linked = txRef.current.filter((t) => t.meta?.installmentId === id).map((t) => t.id)
     setTransactions((prev) => prev.filter((t) => t.meta?.installmentId !== id))
-  }, [])
+    tombstone([id, ...linked])
+  }, [tombstone])
 
   const addPerson = useCallback((name) => {
     setPeople((prev) => {
@@ -400,7 +443,8 @@ export function FinanceProvider({ children }) {
 
   const deletePerson = useCallback((id) => {
     setPeople((prev) => prev.filter((p) => p.id !== id))
-  }, [])
+    tombstone(id)
+  }, [tombstone])
 
   // --- Custom categories (user-created, with own emoji icon + color) ---
   const addCustomCategory = useCallback((cat) => {
@@ -411,7 +455,8 @@ export function FinanceProvider({ children }) {
 
   const deleteCustomCategory = useCallback((id) => {
     setCustomCategories((prev) => prev.filter((c) => c.id !== id))
-  }, [])
+    tombstone(id)
+  }, [tombstone])
 
   // --- Recurring transactions ---
   const addRecurring = useCallback((rule) => {
@@ -431,7 +476,8 @@ export function FinanceProvider({ children }) {
 
   const deleteRecurring = useCallback((id) => {
     setRecurring((prev) => prev.filter((r) => r.id !== id))
-  }, [])
+    tombstone(id)
+  }, [tombstone])
 
   // --- Monthly budgets per category (standing limit, applies every month) ---
   const setBudget = useCallback((categoryId, amount) => {
@@ -480,6 +526,23 @@ export function FinanceProvider({ children }) {
     if (!data || data.app !== 'ploy-finance' || !Array.isArray(data.transactions)) {
       throw new Error('ไฟล์สำรองไม่ถูกต้อง')
     }
+    // Restoring replaces everything → tombstone whatever is here now, so the old
+    // items can't come back from another device, and un-tombstone what we restore.
+    const restored = new Set([
+      ...(data.transactions || []),
+      ...(data.installments || []),
+      ...(data.people || []),
+      ...(data.customCategories || []),
+      ...(data.recurring || []),
+      ...(data.wallets || []),
+    ].map((x) => x?.id).filter(Boolean))
+    const at = Date.now()
+    const current = [
+      ...txRef.current, ...installmentsRef.current, ...people,
+      ...customCategories, ...recurring, ...wallets,
+    ].map((x) => x?.id).filter((id) => id && !restored.has(id))
+    setDeletedIds((prev) => pruneTombs([...prev.filter((d) => !restored.has(d.id)), ...current.map((id) => ({ id, at }))]))
+
     setTransactions(data.transactions || [])
     setInstallments(data.installments || [])
     setPeople(data.people || [])
@@ -488,7 +551,38 @@ export function FinanceProvider({ children }) {
     setRecurring(data.recurring || [])
     setWallets(data.wallets?.length ? data.wallets : [DEFAULT_WALLET])
     setCycleStartDayState(data.cycleStartDay || 1)
-  }, [])
+  }, [people, customCategories, recurring, wallets])
+
+  // --- Clear data (start a fresh month) ---
+  // scope 'transactions' → ledger + receipt photos only (wallets, debts, settings kept)
+  // scope 'all'          → everything except the app's default wallet
+  const clearData = useCallback((scope = 'transactions') => {
+    const at = Date.now()
+    const gone = txRef.current.map((t) => t.id)
+
+    setTransactions([])
+    if (scope === 'all') {
+      gone.push(
+        ...installmentsRef.current.map((i) => i.id),
+        ...people.map((p) => p.id),
+        ...customCategories.map((c) => c.id),
+        ...recurring.map((r) => r.id),
+        ...wallets.filter((w) => w.id !== DEFAULT_WALLET.id).map((w) => w.id)
+      )
+      setInstallments([])
+      setPeople([])
+      setCustomCategories([])
+      setRecurring([])
+      setBudgets({})
+      setWallets([DEFAULT_WALLET])
+    } else {
+      // keep the debts, but their payment ticks pointed at now-deleted transactions
+      setInstallments((prev) =>
+        prev.map((i) => ({ ...i, payments: i.payments.map((p) => (p.txId ? { ...p, txId: null } : p)) }))
+      )
+    }
+    setDeletedIds((prev) => pruneTombs([...prev, ...gone.filter(Boolean).map((id) => ({ id, at }))]))
+  }, [people, customCategories, recurring, wallets])
 
   // Per-wallet balance: initialBalance + income − expense ± transfers.
   // Transactions without a walletId fall back to the first (default) wallet.
@@ -566,6 +660,7 @@ export function FinanceProvider({ children }) {
         getCategory,
         exportData,
         importData,
+        clearData,
         totalIncome,
         totalExpense,
         balance,
