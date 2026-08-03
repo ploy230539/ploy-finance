@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
-import { perHead } from '../utils/split'
+import { perHead, billModeOf, BILL_LABEL } from '../utils/split'
 import { todayISO } from '../utils/date'
 import Modal from '../components/Modal'
 import CategoryPicker from '../components/CategoryPicker'
@@ -240,9 +240,9 @@ export default function Transactions() {
                           {cat ? t(cat.name) : ''}
                           {tx.splitWith?.length > 0 && (
                             <span className="text-split">
-                              {tx.includeMe === false
-                                ? `${' · '}${t('ฝากซื้อ')} · ${t('เก็บคนละ')} ฿${formatMoney(perHead(tx))}`
-                                : `${' · '}${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')} · ${t('คนละ')} ฿${formatMoney(perHead(tx))}`}
+                              {billModeOf(tx) === 'split'
+                                ? `${' · '}${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')} · ${t('คนละ')} ฿${formatMoney(perHead(tx))}`
+                                : `${' · '}${t(BILL_LABEL[billModeOf(tx)])} · ${t('เก็บคนละ')} ฿${formatMoney(perHead(tx))}`}
                             </span>
                           )}
                         </span>

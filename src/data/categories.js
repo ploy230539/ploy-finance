@@ -56,6 +56,7 @@ export const expenseCategories = [
   { id: 'garden', name: 'ต้นไม้/สวน', icon: '🪴', color: '#16a34a' },
   { id: 'toys', name: 'ของเล่น', icon: '🧸', color: '#f97316' },
   { id: 'sport', name: 'อุปกรณ์กีฬา', icon: '⚽', color: '#22c55e' },
+  { id: 'lend', name: 'ให้ยืมเงิน', icon: '🤝', color: '#0891b2' },
   { id: 'other_expense', name: 'อื่นๆ', icon: '📝', color: '#6b7280' },
 ]
 

@@ -13,6 +13,13 @@ function formatMoney(n) {
   return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// The three ways of getting money back from someone
+const MODES = [
+  { id: 'split', icon: '👥', label: 'หารบิล', hint: 'แบ่งกับเรา', title: 'สร้างบิลหาร', save: 'บันทึกบิลหาร' },
+  { id: 'proxy', icon: '🛍️', label: 'ฝากซื้อ', hint: 'เก็บเต็ม', title: 'ฝากซื้อของ', save: 'บันทึกฝากซื้อ' },
+  { id: 'lend', icon: '🤝', label: 'ให้ยืมเงิน', hint: 'เก็บคืนเต็ม', title: 'ให้ยืมเงิน', save: 'บันทึกเงินให้ยืม', category: 'lend' },
+]
+
 const emptyForm = {
   category: '',
   amount: '',
@@ -33,8 +40,18 @@ export default function SplitBill() {
   const [showPeopleModal, setShowPeopleModal] = useState(false)
   const [newPersonName, setNewPersonName] = useState('')
   const [form, setForm] = useState(emptyForm)
-  const [buyMode, setBuyMode] = useState('split') // 'split' = หารบิล (รวมเรา) | 'proxy' = ฝากซื้อ (เก็บเต็ม)
+  // split = หารบิล (แบ่งกับเรา) · proxy = ฝากซื้อ · lend = ให้ยืมเงิน
+  // proxy and lend both collect the full amount — we keep no share.
+  const [buyMode, setBuyMode] = useState('split')
   const includeMe = buyMode === 'split'
+  const mode = MODES.find((m) => m.id === buyMode)
+
+  function openMode(id) {
+    const preset = MODES.find((m) => m.id === id)
+    setForm({ ...emptyForm, date: todayISO(), category: preset.category || '' })
+    setBuyMode(id)
+    setShowModal(true)
+  }
 
   const splitTransactions = useMemo(
     () => transactions.filter((t) => t.splitWith?.length > 0),
@@ -82,10 +99,11 @@ export default function SplitBill() {
       type: 'expense',
       category: form.category,
       amount,
-      note: form.note || (includeMe ? `หาร ${form.splitWith.length + 1} คน` : 'ฝากซื้อ'),
+      note: form.note || (includeMe ? `หาร ${form.splitWith.length + 1} คน` : mode.label),
       date: form.date,
       splitWith: form.splitWith,
       includeMe,
+      billMode: buyMode,
       photo: form.photo,
     })
     setForm(emptyForm)
@@ -98,21 +116,28 @@ export default function SplitBill() {
   return (
     <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-slate-800">{t('หารบิล')}</h1>
-        <div className="flex gap-2">
+        <h1 className="text-xl font-bold text-slate-800">{t('เก็บเงินจากเพื่อน')}</h1>
+        <button
+          onClick={() => setShowPeopleModal(true)}
+          className="bg-white text-slate-600 px-3 py-2.5 rounded-xl text-sm font-medium border-2 border-slate-200"
+        >
+          {t('รายชื่อ')}
+        </button>
+      </div>
+
+      {/* All three ways are visible up front — the mode used to be hidden inside the form */}
+      <div className="grid grid-cols-3 gap-2">
+        {MODES.map((m) => (
           <button
-            onClick={() => setShowPeopleModal(true)}
-            className="bg-white text-slate-600 px-3 py-2.5 rounded-xl text-sm font-medium border-2 border-slate-200"
+            key={m.id}
+            onClick={() => openMode(m.id)}
+            className="flex flex-col items-center gap-1 py-3.5 rounded-2xl bg-white border-2 border-slate-200 hover:border-split active:translate-y-px transition-all shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
           >
-            {t('รายชื่อ')}
+            <span className="text-2xl leading-none">{m.icon}</span>
+            <span className="text-[13px] font-semibold text-slate-700">{t(m.label)}</span>
+            <span className="text-[10px] text-slate-400">{t(m.hint)}</span>
           </button>
-          <button
-            onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setBuyMode('split'); setShowModal(true) }}
-            className="bg-gradient-to-br from-split to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px transition-transform"
-          >
-            {t('+ สร้างบิล')}
-          </button>
-        </div>
+        ))}
       </div>
 
       {/* Owe summary */}
@@ -149,18 +174,23 @@ export default function SplitBill() {
 
       {/* History */}
       <section className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-5">
-        <h2 className="font-semibold text-slate-800 mb-3.5">{t('📋 ประวัติบิลหาร')}</h2>
+        <h2 className="font-semibold text-slate-800 mb-3.5">{t('📋 ประวัติการเก็บเงิน')}</h2>
         {splitTransactions.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-5xl mb-3">🧾</div>
-            <p className="text-sm text-slate-400">{t('ยังไม่มีบิลหาร')}</p>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {t('ยังไม่มีรายการ — แตะปุ่มด้านบนเพื่อหารบิล ฝากซื้อ หรือให้ยืมเงิน')}
+            </p>
           </div>
         ) : (
           <div className="-my-1">
             {splitTransactions.map((tx) => {
               const cat = getCategory(tx.category)
               const perPerson = perHead(tx)
-              const isProxy = tx.includeMe === false
+              // older records only have includeMe; treat those as ฝากซื้อ
+              const txMode = tx.billMode || (tx.includeMe === false ? 'proxy' : 'split')
+              const isProxy = txMode !== 'split'
+              const badge = MODES.find((m) => m.id === txMode)
               const receivedCount = tx.splitWith.filter((p) => tx.settlements?.[p]?.received).length
               return (
                 <div key={tx.id} className="py-3 border-b border-slate-50 last:border-0">
@@ -174,7 +204,7 @@ export default function SplitBill() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate flex items-center gap-1.5">
                         <span className="truncate">{tx.note || (cat ? t(cat.name) : '')}</span>
-                        {isProxy && <span className="text-[10px] bg-split-light text-split px-1.5 py-0.5 rounded-full flex-shrink-0">{t('ฝากซื้อ')}</span>}
+                        {isProxy && <span className="text-[10px] bg-split-light text-split px-1.5 py-0.5 rounded-full flex-shrink-0">{badge.icon} {t(badge.label)}</span>}
                       </div>
                       <div className="text-xs text-slate-400 mt-0.5">
                         {fmtDate(tx.date, { day: 'numeric', month: 'short' })}
@@ -226,18 +256,16 @@ export default function SplitBill() {
       </section>
 
       {/* Create split modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={includeMe ? t('สร้างบิลหาร') : t('ฝากซื้อของ')}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={t(mode.title)}>
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Mode: split with me vs proxy-buy (collect full) */}
+          {/* Split with me, or collect the full amount (proxy buy / lending) */}
           <div className="flex rounded-xl overflow-hidden border-2 border-slate-200">
-            <button type="button" onClick={() => setBuyMode('split')}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${includeMe ? 'bg-split text-white' : 'bg-white text-slate-500'}`}>
-              {t('👥 หารบิล (รวมเรา)')}
-            </button>
-            <button type="button" onClick={() => setBuyMode('proxy')}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${!includeMe ? 'bg-split text-white' : 'bg-white text-slate-500'}`}>
-              {t('🛍️ ฝากซื้อ (เก็บเต็ม)')}
-            </button>
+            {MODES.map((m) => (
+              <button key={m.id} type="button" onClick={() => setBuyMode(m.id)}
+                className={`flex-1 py-2.5 text-[13px] font-semibold transition-colors ${buyMode === m.id ? 'bg-split text-white' : 'bg-white text-slate-500'}`}>
+                {m.icon} {t(m.label)}
+              </button>
+            ))}
           </div>
 
           <div className="relative">
@@ -323,7 +351,9 @@ export default function SplitBill() {
               <div className="text-sm text-slate-600 mb-1">
                 {includeMe
                   ? `${t('หาร')} ${splitCount} ${t('คน')} (${t('ฉัน')} + ${form.splitWith.join(', ')})`
-                  : `${t('เก็บเต็มจาก')} ${form.splitWith.join(', ')} (${t('ไม่รวมเรา')})`}
+                  : buyMode === 'lend'
+                    ? `${t('ให้ยืม')} ${form.splitWith.join(', ')} — ${t('เก็บคืนเต็มจำนวน')}`
+                    : `${t('เก็บเต็มจาก')} ${form.splitWith.join(', ')} (${t('ไม่รวมเรา')})`}
               </div>
               <div className="text-2xl font-bold text-split">฿{formatMoney(splitAmount)} / {t('คน')}</div>
             </div>
@@ -335,7 +365,7 @@ export default function SplitBill() {
             className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 bg-gradient-to-br from-split to-orange-700 shadow-[0_4px_12px_rgba(234,88,12,0.3)] active:translate-y-px"
           >
             <CheckIcon width={20} height={20} />
-            {includeMe ? t('บันทึกบิลหาร') : t('บันทึกฝากซื้อ')}
+            {t(mode.save)}
           </button>
         </form>
       </Modal>

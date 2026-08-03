@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useFinance } from '../contexts/FinanceContext'
 import { useLang } from '../contexts/LanguageContext'
+import { billModeOf, BILL_LABEL } from '../utils/split'
 import BudgetModal from '../components/BudgetModal'
 import WalletsModal from '../components/WalletsModal'
 
@@ -354,7 +355,10 @@ function TxRow({ tx }) {
         <div className="text-sm font-medium truncate">{tx.note || (cat ? t(cat.name) : '')}</div>
         <div className="text-xs text-slate-400">
           {fmtDate(tx.date, { day: 'numeric', month: 'short', year: '2-digit' })}
-          {tx.splitWith?.length > 0 && (tx.includeMe === false ? ` · ${t('ฝากซื้อ')}` : ` · ${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')}`)}
+          {tx.splitWith?.length > 0 &&
+            (billModeOf(tx) === 'split'
+              ? ` · ${t('หาร')} ${tx.splitWith.length + 1} ${t('คน')}`
+              : ` · ${t(BILL_LABEL[billModeOf(tx)])}`)}
         </div>
       </div>
       <span className={`text-sm font-bold ${isIncome ? 'text-income' : 'text-expense'}`}>{isIncome ? '+' : '-'}฿{formatMoney(tx.amount)}</span>

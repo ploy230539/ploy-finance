@@ -10,7 +10,7 @@ const navItems = [
   { to: '/', label: 'หน้าหลัก', Icon: HomeIcon },
   { to: '/transactions', label: 'รายการ', Icon: ListIcon },
   { to: '/installments', label: 'ผ่อนชำระ', Icon: CardIcon },
-  { to: '/split', label: 'หารบิล', Icon: SplitIcon },
+  { to: '/split', label: 'เก็บเงิน', Icon: SplitIcon },
 ]
 
 export default function Layout() {

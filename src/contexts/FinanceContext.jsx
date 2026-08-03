@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, u
 import { v4 as uuidv4 } from 'uuid'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { expenseCategories, incomeCategories, getCategoryById } from '../data/categories'
-import { perHead } from '../utils/split'
+import { perHead, billModeOf } from '../utils/split'
 import { todayISO } from '../utils/date'
 import { registerFlush } from '../utils/flushBus'
 import { useAuth } from './AuthContext'
@@ -14,6 +14,13 @@ function ymNow() {
 }
 
 const DEFAULT_WALLET = { id: 'w_cash', name: 'เงินสด', type: 'cash', icon: '💵', color: '#059669', initialBalance: 0 }
+
+// Wording of the auto-created income when someone pays us back
+const REPAY_NOTE = {
+  split: 'รับเงินหารคืนจาก',
+  proxy: 'รับเงินค่าฝากซื้อจาก',
+  lend: 'รับเงินยืมคืนจาก',
+}
 
 // Union two arrays by id — cloud wins on conflicts, local-only items survive,
 // anything deleted (tombstoned) on either side is dropped. Never blindly overwrite:
@@ -371,7 +378,7 @@ export function FinanceProvider({ children }) {
         type: 'income',
         category: 'split_repay',
         amount: perHead(tx),
-        note: `รับเงินหารคืนจาก ${name}` + (tx.note ? ` · ${tx.note}` : ''),
+        note: `${REPAY_NOTE[billModeOf(tx)]} ${name}` + (tx.note ? ` · ${tx.note}` : ''),
         date: todayISO(),
         splitWith: [],
         createdAt: new Date().toISOString(),
