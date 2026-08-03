@@ -25,7 +25,7 @@ const emptyForm = {
 export default function SplitBill() {
   const {
     transactions, addTransaction, settleSplitPerson, people, addPerson, deletePerson,
-    expenseCats, getCategory, addCustomCategory, deleteCustomCategory,
+    expenseCats, getCategory, addCustomCategory, deleteCustomCategory, countCategoryUsage,
   } = useFinance()
   const { t, fmtDate } = useLang()
   const [viewReceipt, setViewReceipt] = useState(null)
@@ -183,7 +183,7 @@ export default function SplitBill() {
                     </div>
                     {tx.photo && (
                       <button onClick={() => setViewReceipt(tx.photo)} className="flex-shrink-0" title={t('ดูสลิป')}>
-                        <img src={tx.photo} alt="สลิป" className="w-9 h-9 rounded-lg object-cover border border-slate-200" />
+                        <img src={tx.photo} alt="สลิป" loading="lazy" decoding="async" className="w-9 h-9 rounded-lg object-cover border border-slate-200" />
                       </button>
                     )}
                     <div className="text-right flex-shrink-0">
@@ -261,6 +261,7 @@ export default function SplitBill() {
               onSelect={(id) => setForm({ ...form, category: id })}
               onAddCategory={(cat) => addCustomCategory({ ...cat, type: 'expense' })}
               onDeleteCategory={deleteCustomCategory}
+              countUsage={countCategoryUsage}
             />
           </Field>
 

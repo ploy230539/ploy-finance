@@ -13,7 +13,7 @@ const emptyForm = { type: 'expense', category: '', amount: '', note: '', dayOfMo
 export default function RecurringModal({ isOpen, onClose }) {
   const {
     recurring, addRecurring, toggleRecurring, deleteRecurring,
-    getCategory, expenseCats, incomeCats, addCustomCategory, deleteCustomCategory,
+    getCategory, expenseCats, incomeCats, addCustomCategory, deleteCustomCategory, countCategoryUsage,
   } = useFinance()
   const { t } = useLang()
   const [adding, setAdding] = useState(false)
@@ -102,6 +102,7 @@ export default function RecurringModal({ isOpen, onClose }) {
               onSelect={(id) => setForm({ ...form, category: id })}
               onAddCategory={(c) => addCustomCategory({ ...c, type: form.type })}
               onDeleteCategory={deleteCustomCategory}
+              countUsage={countCategoryUsage}
             />
           </div>
 

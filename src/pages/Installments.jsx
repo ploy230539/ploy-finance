@@ -19,10 +19,11 @@ const emptyForm = {
   interestRate: '',
   startDate: todayISO(),
   cardName: '',
+  walletId: '',
 }
 
 export default function Installments() {
-  const { installments, addInstallment, toggleInstallmentPayment, deleteInstallment } = useFinance()
+  const { installments, addInstallment, toggleInstallmentPayment, deleteInstallment, wallets } = useFinance()
   const { t, fmtDate } = useLang()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -53,6 +54,7 @@ export default function Installments() {
       interestRate: form.interestRate ? parseFloat(form.interestRate) : null,
       startDate: form.startDate,
       cardName: form.cardName,
+      walletId: form.walletId || wallets[0]?.id,
     })
     setForm(emptyForm)
     setShowModal(false)
@@ -311,6 +313,27 @@ export default function Installments() {
               </div>
               <div className="text-xl font-bold text-installment">฿{formatMoney(parseFloat(form.monthlyAmount))}</div>
             </div>
+          )}
+
+          {wallets.length > 1 && (
+            <Field label={t('💰 จ่ายค่างวดจากกระเป๋า')}>
+              <div className="flex flex-wrap gap-2">
+                {wallets.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => setForm({ ...form, walletId: w.id })}
+                    className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5 ${
+                      (form.walletId || wallets[0]?.id) === w.id
+                        ? 'border-installment bg-installment-light text-installment'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    <span>{w.icon}</span>{t(w.name)}
+                  </button>
+                ))}
+              </div>
+            </Field>
           )}
 
           <Field label={t('เริ่มผ่อนวันที่')}>

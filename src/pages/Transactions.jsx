@@ -15,6 +15,8 @@ function formatMoney(n) {
   return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const PAGE_SIZE = 50
+
 const emptyForm = {
   type: 'expense',
   category: '',
@@ -30,7 +32,7 @@ const emptyForm = {
 export default function Transactions() {
   const {
     transactions, addTransaction, updateTransaction, deleteTransaction, people, addPerson,
-    expenseCats, incomeCats, getCategory, addCustomCategory, deleteCustomCategory, wallets,
+    expenseCats, incomeCats, getCategory, addCustomCategory, deleteCustomCategory, countCategoryUsage, wallets,
   } = useFinance()
   const { t, fmtDate } = useLang()
   const [showModal, setShowModal] = useState(false)
@@ -81,14 +83,22 @@ export default function Transactions() {
     return transactions.filter((t) => t.type === filter)
   }, [transactions, filter])
 
+  // Render in pages — with receipt photos inlined as data URLs, drawing hundreds
+  // of rows at once makes the page crawl on a phone.
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  useEffect(() => setLimit(PAGE_SIZE), [filter])
+
+  const visible = useMemo(() => filtered.slice(0, limit), [filtered, limit])
+  const remaining = filtered.length - visible.length
+
   const grouped = useMemo(() => {
     const groups = {}
-    filtered.forEach((tx) => {
+    visible.forEach((tx) => {
       if (!groups[tx.date]) groups[tx.date] = []
       groups[tx.date].push(tx)
     })
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
-  }, [filtered])
+  }, [visible])
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -244,7 +254,7 @@ export default function Transactions() {
                         className="flex-shrink-0"
                         title="ดูสลิป"
                       >
-                        <img src={tx.photo} alt="สลิป" className="w-9 h-9 rounded-lg object-cover border border-slate-200" />
+                        <img src={tx.photo} alt="สลิป" loading="lazy" decoding="async" className="w-9 h-9 rounded-lg object-cover border border-slate-200" />
                       </button>
                     )}
                     <span className={`text-sm font-bold ${isIncome ? 'text-income' : 'text-expense'}`}>
@@ -262,6 +272,15 @@ export default function Transactions() {
             </div>
           </div>
         ))
+      )}
+
+      {remaining > 0 && (
+        <button
+          onClick={() => setLimit((n) => n + PAGE_SIZE)}
+          className="w-full py-3 rounded-2xl bg-white text-sm font-semibold text-primary-700 shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:translate-y-px"
+        >
+          {t('ดูรายการเก่ากว่านี้')} ({remaining})
+        </button>
       )}
 
       {/* Add / Edit Modal */}
@@ -312,6 +331,7 @@ export default function Transactions() {
               onSelect={(id) => setForm({ ...form, category: id })}
               onAddCategory={addCategoryOfType}
               onDeleteCategory={deleteCustomCategory}
+              countUsage={countCategoryUsage}
             />
           </Field>
 

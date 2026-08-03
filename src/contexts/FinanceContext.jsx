@@ -289,7 +289,27 @@ export function FinanceProvider({ children }) {
   }, [tombstone])
 
   const updateTransaction = useCallback((id, patch) => {
-    setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+    setTransactions((prev) => {
+      const target = prev.find((t) => t.id === id)
+      if (!target) return prev
+      const updated = { ...target, ...patch }
+
+      // Editing a split bill's amount must also correct the income entries
+      // already recorded for whoever paid us back — otherwise the ledger keeps
+      // the old per-head share forever.
+      const per = perHead(updated)
+      const linked = new Set(
+        Object.values(updated.settlements || {})
+          .filter((s) => s?.received && s.incomeTxId)
+          .map((s) => s.incomeTxId)
+      )
+
+      return prev.map((t) => {
+        if (t.id === id) return updated
+        if (linked.has(t.id) && t.amount !== per) return { ...t, amount: per }
+        return t
+      })
+    })
   }, [])
 
   // Free up storage: strip receipt photos but keep the transactions
@@ -395,6 +415,8 @@ export function FinanceProvider({ children }) {
   // Toggle an installment payment. Marking paid → auto-records an expense in the ledger; un-marking removes it.
   const installmentsRef = useRef(installments)
   useEffect(() => { installmentsRef.current = installments }, [installments])
+  const walletsRef = useRef(wallets)
+  useEffect(() => { walletsRef.current = wallets }, [wallets])
   const toggleInstallmentPayment = useCallback((installmentId, monthIndex) => {
     const inst = installmentsRef.current.find((i) => i.id === installmentId)
     if (!inst) return
@@ -420,6 +442,8 @@ export function FinanceProvider({ children }) {
         note: `${inst.name} · งวด ${payment.month}`,
         date: todayISO(),
         splitWith: [],
+        // pay from the wallet chosen for this debt, not always the first one
+        walletId: inst.walletId || walletsRef.current[0]?.id,
         createdAt: new Date().toISOString(),
         meta: { installmentId, monthIndex },
       }
@@ -454,6 +478,14 @@ export function FinanceProvider({ children }) {
     setPeople((prev) => prev.filter((p) => p.id !== id))
     tombstone(id)
   }, [tombstone])
+
+  // How many records still point at a category — used to warn before deleting it
+  const countCategoryUsage = useCallback(
+    (id) =>
+      transactions.filter((t) => t.category === id).length +
+      recurring.filter((r) => r.category === id).length,
+    [transactions, recurring]
+  )
 
   // --- Custom categories (user-created, with own emoji icon + color) ---
   const addCustomCategory = useCallback((cat) => {
@@ -681,6 +713,7 @@ export function FinanceProvider({ children }) {
         customCategories,
         addCustomCategory,
         deleteCustomCategory,
+        countCategoryUsage,
         budgets,
         setBudget,
         recurring,

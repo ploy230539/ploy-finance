@@ -197,6 +197,12 @@ export const EN = {
   'กู้คืนข้อมูลจากไฟล์นี้?': 'Restore from this file?',
   'ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่': 'All current data will be replaced',
   'กู้คืนไม่สำเร็จ': 'Restore failed',
+  'ดูรายการเก่ากว่านี้': 'Show older records',
+  'ลบหมวด': 'Delete category',
+  'มี': 'There are',
+  'รายการที่ใช้หมวดนี้อยู่ — รายการจะยังอยู่ แต่จะไม่มีชื่อหมวดหมู่':
+    'records using it — they stay, but lose their category name',
+  '💰 จ่ายค่างวดจากกระเป๋า': '💰 Pay instalments from',
   '🧹 ล้างข้อมูล (เริ่มเดือนใหม่)': '🧹 Clear data (fresh start)',
   'ต้องสำรองข้อมูลก่อนถึงจะล้างได้ และต้องพิมพ์ยืนยัน — ถ้าเข้าระบบอยู่ ข้อมูลจะถูกล้างในทุกเครื่องด้วย':
     'You must back up first and type a confirmation — if you are signed in, the data is cleared on every device',

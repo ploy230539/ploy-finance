@@ -13,11 +13,20 @@ const COLOR_CHOICES = [
   '#2563EB','#6366F1','#7C3AED','#DB2777','#EC4899','#F43F5E','#64748B','#475569',
 ]
 
-export default function CategoryPicker({ categories, selected, onSelect, onAddCategory, onDeleteCategory }) {
+export default function CategoryPicker({ categories, selected, onSelect, onAddCategory, onDeleteCategory, countUsage }) {
   const { t } = useLang()
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [draft, setDraft] = useState({ name: '', icon: '🍜', color: '#D97706' })
+
+  // Records keep their category id, so deleting one leaves them unlabelled — warn first
+  function confirmDelete(cat) {
+    const used = countUsage?.(cat.id) || 0
+    const msg = used
+      ? `${t('ลบหมวด')} "${t(cat.name)}"?\n\n⚠️ ${t('มี')} ${used} ${t('รายการที่ใช้หมวดนี้อยู่ — รายการจะยังอยู่ แต่จะไม่มีชื่อหมวดหมู่')}`
+      : `${t('ลบหมวด')} "${t(cat.name)}"?`
+    if (confirm(msg)) onDeleteCategory(cat.id)
+  }
 
   // match the Thai name and the translated one, so search works in both languages
   const q = search.trim().toLowerCase()
@@ -140,7 +149,7 @@ export default function CategoryPicker({ categories, selected, onSelect, onAddCa
               {cat.custom && onDeleteCategory && (
                 <span
                   role="button"
-                  onClick={(e) => { e.stopPropagation(); onDeleteCategory(cat.id) }}
+                  onClick={(e) => { e.stopPropagation(); confirmDelete(cat) }}
                   className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-slate-300 hover:bg-expense text-white text-xs flex items-center justify-center"
                 >
                   ×
