@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { HomeIcon, ListIcon, CardIcon, SplitIcon } from './Icons'
 import SettingsModal from './SettingsModal'
 import { useLang } from '../contexts/LanguageContext'
+import { useFinance } from '../contexts/FinanceContext'
+import { shouldRemindBackup, daysSinceBackup, snoozeReminder } from '../utils/backup'
 
 const navItems = [
   { to: '/', label: 'หน้าหลัก', Icon: HomeIcon },
@@ -14,7 +16,16 @@ const navItems = [
 export default function Layout() {
   const navigate = useNavigate()
   const { t, lang, toggle } = useLang()
+  const { transactions } = useFinance()
   const [showSettings, setShowSettings] = useState(false)
+  // Checked once per mount — the banner must not pop in while the user is working
+  const [remind, setRemind] = useState(() => shouldRemindBackup(transactions.length))
+  const backupAge = daysSinceBackup()
+
+  function dismissReminder() {
+    snoozeReminder()
+    setRemind(false)
+  }
 
   return (
     <div className="min-h-screen flex flex-col pb-[86px]">
@@ -48,6 +59,35 @@ export default function Layout() {
 
       {/* Page Content */}
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-4">
+        {remind && (
+          <div className="mb-4 rounded-2xl bg-white border-2 border-primary-200 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] fade-in">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl leading-none">🛟</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-slate-800">
+                  {backupAge === null ? t('ยังไม่เคยสำรองข้อมูลเลย') : `${t('ไม่ได้สำรองข้อมูลมา')} ${backupAge} ${t('วันแล้ว')}`}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  {t('ดาวน์โหลดไฟล์สำรองเก็บไว้ เผื่อเข้าบัญชีไม่ได้หรือเปลี่ยนเครื่อง')}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => { setShowSettings(true); setRemind(false) }}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold bg-gradient-to-br from-primary-600 to-primary-700 active:translate-y-px"
+              >
+                {t('สำรองเลย')}
+              </button>
+              <button
+                onClick={dismissReminder}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium border-2 border-slate-200 text-slate-500"
+              >
+                {t('ไว้ทีหลัง')}
+              </button>
+            </div>
+          </div>
+        )}
         <Outlet />
       </main>
 

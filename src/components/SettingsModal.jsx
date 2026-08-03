@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LanguageContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Modal from './Modal'
-import { downloadBackup, downloadTransactionsCsv, readBackupFile } from '../utils/backup'
+import { downloadBackup, downloadTransactionsCsv, readBackupFile, lastBackupAt, daysSinceBackup, REMIND_AFTER_DAYS } from '../utils/backup'
 
 const CONFIRM_WORD = 'ล้าง'
 const CONFIRM_WORD_EN = 'CLEAR'
@@ -12,12 +12,13 @@ const CONFIRM_WORD_EN = 'CLEAR'
 export default function SettingsModal({ isOpen, onClose }) {
   const { exportData, importData, clearData, getCategory, transactions, installments, cycleStartDay, setCycleStartDay, removeAllPhotos, removePhotosBefore } = useFinance()
   const { user, signOut, enabled } = useAuth()
-  const { t, lang } = useLang()
+  const { t, lang, fmtDate } = useLang()
   const { theme, setTheme, themes } = useTheme()
   const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
   const [beforeDate, setBeforeDate] = useState('')
   const [backedUp, setBackedUp] = useState(false)
+  const [backupAge, setBackupAge] = useState(() => daysSinceBackup())
 
   const photoTxs = transactions.filter((tx) => tx.photo)
   const photoBytes = photoTxs.reduce((s, tx) => s + (tx.photo?.length || 0), 0)
@@ -47,6 +48,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   function handleBackup() {
     downloadBackup(exportData())
     setBackedUp(true)
+    setBackupAge(0)
     flash(t('ดาวน์โหลดไฟล์สำรองแล้ว — เก็บไว้ที่ปลอดภัยนะ'))
   }
 
@@ -166,6 +168,15 @@ export default function SettingsModal({ isOpen, onClose }) {
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             {t('ข้อมูลเก็บในเครื่องนี้เท่านั้น — ควรสำรองเป็นระยะ ถ้าล้างเบราว์เซอร์หรือเปลี่ยนเครื่อง จะได้กู้คืนได้')}
           </p>
+          <div
+            className={`text-xs rounded-lg px-3 py-2 mb-3 ${
+              backupAge !== null && backupAge < REMIND_AFTER_DAYS ? 'bg-income-light text-income' : 'bg-slate-100 text-slate-500'
+            }`}
+          >
+            {backupAge === null
+              ? `🛟 ${t('ยังไม่เคยสำรองข้อมูลเลย')}`
+              : `🛟 ${t('สำรองล่าสุด')} ${fmtDate(lastBackupAt(), { day: 'numeric', month: 'short', year: 'numeric' })} (${backupAge} ${t('วันที่แล้ว')})`}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleBackup}

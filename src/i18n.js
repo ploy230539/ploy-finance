@@ -198,6 +198,15 @@ export const EN = {
   'ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่': 'All current data will be replaced',
   'กู้คืนไม่สำเร็จ': 'Restore failed',
   'ดูรายการเก่ากว่านี้': 'Show older records',
+  'ยังไม่เคยสำรองข้อมูลเลย': 'You have never backed up',
+  'ไม่ได้สำรองข้อมูลมา': 'No backup for',
+  'วันแล้ว': 'days',
+  'ดาวน์โหลดไฟล์สำรองเก็บไว้ เผื่อเข้าบัญชีไม่ได้หรือเปลี่ยนเครื่อง':
+    'Download a backup file in case you lose account access or switch devices',
+  'สำรองเลย': 'Back up now',
+  'ไว้ทีหลัง': 'Later',
+  'สำรองล่าสุด': 'Last backup',
+  'วันที่แล้ว': 'days ago',
   'ลบหมวด': 'Delete category',
   'มี': 'There are',
   'รายการที่ใช้หมวดนี้อยู่ — รายการจะยังอยู่ แต่จะไม่มีชื่อหมวดหมู่':
